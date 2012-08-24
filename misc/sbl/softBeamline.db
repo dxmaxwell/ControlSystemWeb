@@ -1,0 +1,59 @@
+
+
+# Clock (Simple Counter to Infinity) #
+
+record(ai, "CLK$(SBLNAME)-101") {
+	field(DTYP, "Soft Channel")
+	field(EGU, "s")
+	field(PINI, 1)
+	field(VAL, 0)
+}
+
+record(calcout, "CLK$(SBLNAME)-101:calc") {
+	field(DTYP, "Soft Channel")
+	field(SCAN, "1 second")
+	field(INPA, "CLK$(SBLNAME)-101")
+	field(CALC, "A+1")
+	field(OUT, "CLK$(SBLNAME)-101 PP")
+}
+
+
+# Temperature Monitor #
+
+record(ao, "TM$(SBLNAME)-101:sp") {
+	field(DTYP, "Soft Channel")
+	field(EGU, "C")
+	field(PINI, 1)
+	field(VAL, 20)
+}
+
+record(ai, "TM$(SBLNAME)-101") {
+	field(DTYP, "Soft Channel")
+	field(EGU, "C")
+	field(PINI, 1)
+	field(VAL, 0)
+}
+
+record(calcout, "TM$(SBLNAME)-101:calc") {
+	field(DTYP, "Soft Channel")
+	field(SCAN, "5 second")
+	field(INPA, "TM$(SBLNAME)-101:sp")
+	field(CALC, "A+((RNDM*2)-1)")
+	field(OUT, "TM$(SBLNAME)-101 PP")
+}
+
+# Storage Ring Current #
+record(ai, "PCT$(SBLNAME)-01:mA:fbk") {
+	field(DTYP, "Soft Channel")
+	field(EGU, "mA")
+	field(PINI, 1)
+	field(VAL, 0)
+}
+
+record(calcout, "PCT$(SBLNAME)-01:mA:calc") {
+	field(DTYP, "Soft Channel")
+	field(SCAN, "1 second")
+	field(INPA, "CLK$(SBLNAME)-101")
+	field(CALC, "LOG(1000-(A%1000))*83")
+	field(OUT, "PCT$(SBLNAME)-01:mA:fbk PP")
+}

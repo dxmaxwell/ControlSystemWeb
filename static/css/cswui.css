@@ -1,0 +1,66 @@
+/*
+ * Default style-sheet for Control System Web User Interface.
+ */
+
+.csw-readonly-field {
+
+}
+
+
+.csw-three-left {
+	float:left;
+	border-top:1px solid;
+	border-bottom:1px solid;
+	border-right:none;
+	border-left:1px solid;
+	height:19;
+	/*width:16;*/
+}
+
+
+.csw-three-middle {
+	float:left;
+	border-top:1px solid;
+	border-bottom:1px solid;
+	border-right:none;
+	border-left:none;
+	height:19;
+}
+
+
+.csw-three-right {
+	float:left;
+	border-top:1px solid;
+	border-bottom:1px solid;
+	border-right:1px solid;
+	border-left:none;
+	height:19;
+	/*width:16;*/
+}
+
+
+.csw-status {
+	width:16;
+}
+
+
+.csw-value {
+	text-align:right;
+}
+input.csw-value {
+	border-style:none;
+}
+
+
+.csw-units {
+	width:25;
+}
+
+
+
+.csw-ws-disconnected {
+	background-image:url(../img/cross.png);
+	background-repeat:no-repeat;
+	/*height:17;width:16;*/
+}
+
