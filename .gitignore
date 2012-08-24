@@ -1,0 +1,10 @@
+
+# Python compiled source
+*.pyc
+
+# Eclipse configuration
+.pydevproject
+.project
+
+# Editor Crumbs
+*~
