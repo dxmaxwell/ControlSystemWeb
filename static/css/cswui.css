@@ -13,8 +13,8 @@
 	border-bottom:1px solid;
 	border-right:none;
 	border-left:1px solid;
-	height:19;
-	/*width:16;*/
+	height:19px;
+	/*width:16px;*/
 }
 
 
@@ -24,7 +24,7 @@
 	border-bottom:1px solid;
 	border-right:none;
 	border-left:none;
-	height:19;
+	height:19px;
 }
 
 
@@ -34,13 +34,13 @@
 	border-bottom:1px solid;
 	border-right:1px solid;
 	border-left:none;
-	height:19;
+	height:19px;
 	/*width:16;*/
 }
 
 
 .csw-status {
-	width:16;
+	width:16px;
 }
 
 
@@ -53,7 +53,8 @@ input.csw-value {
 
 
 .csw-units {
-	width:25;
+	width:25px;
+	color:green;
 }
 
 

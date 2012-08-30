@@ -50,10 +50,21 @@ cswui.processReadOnlyField = function(elm) {
 	});
 	
 	$(cswui.ws).on("message", function(event) {
-		var e = $(elm).find('.csw-value').get(0);
-		var jmsg = JSON.parse(event.message)
+		var jmsg = JSON.parse(event.message);
 		if(jmsg && jmsg[elm.csw.deviceURI]) {
-			e.value = jmsg[elm.csw.deviceURI].value;
+			jmsg = jmsg[elm.csw.deviceURI];
+			if(jmsg.precision !== null) {
+				jmsg.value *= Math.pow(10,jmsg.precision);
+				jmsg.value  = Math.round(jmsg.value);
+				jmsg.value /= Math.pow(10,jmsg.precision);
+			}
+			var e = $(elm).find('.csw-value').get(0);
+			e.value = jmsg.value;
+
+			if(jmsg.units !== null) {
+				var e = $(elm).find('.csw-units').get(0);
+				$(e).html(jmsg.units);
+			}
 		}
 	});
 	
@@ -68,7 +79,7 @@ cswui.processReadOnlyField = function(elm) {
 
 
 cswui.ReadOnlyFieldTemplate = 
-	'<div>' + 
+	'<div style="clear:both;">' + 
 		'<div class="csw-three-left csw-status"></div>' + 
 		'<div class="csw-three-middle">' + 
 			'<input name="value" class="csw-value" readonly="readonly" size="10"/>' +

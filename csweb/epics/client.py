@@ -3,7 +3,7 @@
 Implementation of Twisted ClientEndpoint interface for an EPICS Process Variable (PV).
 '''
 
-import socket
+import socket, math
 
 from epics import pv, ca
 
@@ -73,7 +73,7 @@ class _ProcessVariableConnector:
             return
         
         log.msg("_ProcessVariableConnector: connect: PV: %(p)s", p=self._pvname, logLevel=_DEBUG)
-        self._pv = pv.PV(self._pvname, callback=self._pvValueCallback, connection_callback=self._pvConnCallback)
+        self._pv = pv.PV(self._pvname, form='ctrl', callback=self._pvValueCallback, connection_callback=self._pvConnCallback)
 
 
     def disconnect(self):

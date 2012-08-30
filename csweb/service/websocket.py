@@ -3,11 +3,9 @@
 WebSocket protocol to handles device requests.
 '''
 
-import json
-
 from .. import device
 
-from ..util import log
+from ..util import log, json
 from ..util.request import CSWPRequest
 
 from twisted.internet import protocol
@@ -141,7 +139,7 @@ class WSDeviceSubscriptionProtocol(protocol.Protocol):
         if self._data is not None:
             log.msg("WSDeviceSubscriptionProtocol: writeData: Write data to WebSocket as JSON", logLevel=_DEBUG)
             try: 
-                jsondata = json.dumps(self._data)
+                jsondata = json.stringify(self._data)
             except Exception as e:
                 log.msg("WSDeviceSubscriptionProtocol: dataReceived: Error dumping JSON: %(e)s", e=e, logLevel=_WARN)
                 return
