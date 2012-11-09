@@ -139,7 +139,7 @@ class WSDeviceSubscriptionProtocol(protocol.Protocol):
         if self._data is not None:
             log.msg("WSDeviceSubscriptionProtocol: writeData: Write data to WebSocket as JSON", logLevel=_DEBUG)
             try: 
-                jsondata = json.stringify(self._data)
+                jsondata = json.stringify(self._data, sanitize=True)
             except Exception as e:
                 log.msg("WSDeviceSubscriptionProtocol: dataReceived: Error dumping JSON: %(e)s", e=e, logLevel=_WARN)
                 return
