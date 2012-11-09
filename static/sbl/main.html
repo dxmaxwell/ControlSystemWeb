@@ -1,24 +1,109 @@
 <!DOCTYPE html>
 <html>
 <head>
+	<link type="text/css" rel="stylesheet" href="../lib/bootstrap/2/css/bootstrap.css" />
 	<link type="text/css" rel="stylesheet" href="../css/cswui.css" />
-	<script type="text/javascript" src="../js/jquery-min.js"></script>
+
+ 	<style type="text/css">
+
+ 		.title {
+ 			margin-top:5px;
+ 			margin-bottom:5px;
+ 			border-radius:6px;
+ 			background-color:rgba(0,0,0,0.1);
+ 		}
+
+		.section:hover {
+ 			background-color:rgba(0,0,0,0.2);
+ 		}
+
+ 		.section {
+ 			margin-top:10px;
+ 			margin-bottom:10px;
+ 			border-radius:6px;
+ 			background-color:rgba(0,0,0,0.1);
+ 		}
+
+ 	</style>
+
+	<script type="text/javascript" src="../lib/jquery/1.8/jquery.min.js"></script>
+	<script type="text/javascript" src="../lib/dygraph/dygraph.min.js"></script>
+	<script type="text/javascript" src="../lib/bootstrap/2/js/bootstrap.min.js"></script>
 	<script type="text/javascript" src="../js/csweb.js"></script>
 	<script type="text/javascript" src="../js/cswui.js"></script>
 </head>
-<body>
-	<div style="width:100%;">
-	<div style="float:left;">Temperature</div>
-	<div class="csw-readonly-field" style="float:left;">
-		<div name="device">epics:TM2026X-101</div>
+<body style="background-color:#BAA8FF;">
+
+	<div class="container">
+
+		<div class="row">
+			<div class="span12 title">
+				<h3 style="text-align:center;">Simulated Beamline Status (0B0-0)</h3>
+			</div>
+		</div>
+
+		<div class="container section">
+
+			<div class="row">
+				<div class="span12">
+					<h4 style="padding-left:10px;">Facility</h4>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="span4">
+					<div class="row">
+						<div class="span2" style="text-align:right;">
+							Current
+						</div>
+						<div class="span2">
+							<div class="csw-readonly-field">
+								<div name="device">epics:PCT2026X-01:mA:fbk</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="span8">
+					<div class="row">
+						<div class="csw-strip-chart">
+							<div name="device">epics:PCT2026X-01:mA:fbk</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="container section">
+
+			<div class="row">
+				<div class="span12">
+					<h4 style="padding-left:10px;">HVAC</h4>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="span4">
+					<div class="row">
+						<div class="span2" style="text-align:right;">
+							Temperature
+						</div>
+						<div class="span2">
+							<div class="csw-readonly-field">
+								<div name="device">epics:TM2026X-101</div>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div class="span8">
+					<div class="csw-strip-chart">
+						<div name="device">epics:TM2026X-101</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
 	</div>
-	</div>
-	
-	<div style="clear:both;">
-	<div style="float:left;">SR Current:</div>
-	<div class="csw-readonly-field" style="float:left;">
-		<div name="device">epics:PCT2026X-01:mA:fbk</div>
-	</div>
-	</div>
+
 </body>
 </html>

@@ -12,6 +12,9 @@ cswui.processDocument = function() {
 	$('.csw-readonly-field').each(function(idx, elx) {
 		cswui.processReadOnlyField(elx);
 	});
+	$('.csw-strip-chart').each(function(idx, elx) {
+		cswui.processStripChart(elx);
+	});
 };
 
 
@@ -34,7 +37,7 @@ cswui.processReadOnlyField = function(elm) {
 	
 	elm.csw.deviceURI = elm.csw.device;
 
-	$(elm).html(cswui.ReadOnlyFieldTemplate);
+	$(elm).html(cswui.templates.readOnlyField);
 
 	$(elm).find('.csw-status').first().addClass('csw-ws-disconnected');
 
@@ -59,7 +62,7 @@ cswui.processReadOnlyField = function(elm) {
 				jmsg.value /= Math.pow(10,jmsg.precision);
 			}
 			var e = $(elm).find('.csw-value').get(0);
-			e.value = jmsg.value;
+			$(e).html(jmsg.value);
 
 			if(jmsg.units !== null) {
 				var e = $(elm).find('.csw-units').get(0);
@@ -77,16 +80,84 @@ cswui.processReadOnlyField = function(elm) {
 	});
 };
 
+cswui.processStripChart = function(elm) {
 
-cswui.ReadOnlyFieldTemplate = 
-	'<div style="clear:both;">' + 
-		'<div class="csw-three-left csw-status"></div>' + 
-		'<div class="csw-three-middle">' + 
-			'<input name="value" class="csw-value" readonly="readonly" size="10"/>' +
-		'</div>' + 
-		'<div class="csw-three-right csw-units"></div>' +
-	'</div>';
+	cswui.processGeneralField(elm);
+	
+	elm.csw.deviceURI = elm.csw.device;
 
+	$(elm).html(cswui.templates.stripChart);
+
+	var e = $(elm).find('.csw-dygraph').get(0);
+
+	elm.csw.dygraph = new Dygraph(e);
+	elm.csw.chartdata = [];
+
+	if(cswui.ws.readyState == csweb.WebSocket.OPEN) {
+		console.log("Ready State is OPEN");
+		cswui.ws.subscribe(elm.csw.deviceURI);
+	}
+
+	$(cswui.ws).on("open", function(event) { 
+		cswui.ws.subscribe(elm.csw.deviceURI);
+		$(elm).find('.csw-status').first().removeClass('csw-ws-disconnected');
+	});
+	
+	$(cswui.ws).on("message", function(event) {
+		var jmsg = JSON.parse(event.message);
+		if(jmsg && jmsg[elm.csw.deviceURI]) {
+			jmsg = jmsg[elm.csw.deviceURI];
+			//if(jmsg.precision !== null) {
+			//	jmsg.value *= Math.pow(10,jmsg.precision);
+			//	jmsg.value  = Math.round(jmsg.value);
+			//	jmsg.value /= Math.pow(10,jmsg.precision);
+			//}
+
+			//var timestamp = 
+
+			if(elm.csw.chartdata.length>10000) {
+				elm.csw.chartdata.shift();
+			}
+			elm.csw.chartdata.push([new Date(jmsg.timestamp * 1000),jmsg.value]);
+			elm.csw.dygraph.updateOptions({file:elm.csw.chartdata});
+
+			//var e = $(elm).find('.csw-value').get(0);
+			//$(e).html(jmsg.value);
+
+			//if(jmsg.units !== null) {
+			//	var e = $(elm).find('.csw-units').get(0);
+			//	$(e).html(jmsg.units);
+			//}
+
+			if(jmsg.units !== null) {
+				elm.csw.dygraph.updateOptions({ylabel:elm.csw.device + ' [' + jmsg.units + ']','yAxisLabelWidth':75, xAxisLabelWidth:75});
+			}
+		}
+	});
+
+	$(cswui.ws).on("error", function(event) {
+		//alert("Got Error!");
+	});
+	
+	$(cswui.ws).on("close", function(event) {
+		$(elm).find('.csw-status').first().addClass('csw-ws-disconnected');
+	});
+};
+
+cswui.templates = {
+	'readOnlyField':
+		'<div>' + 
+			'<span class="csw-status"/>' + 
+			'<span>&nbsp;</span>' + 
+			'<span class="csw-value"/>' + 
+			'<span>&nbsp;</span>' + 
+			'<span class="csw-units"/>' +
+		'</div>',
+
+	'stripChart':
+		'<div class="csw-dygraph">' + '</div>' +
+		'<div class="csw-status"/>'
+};
 
 /* Lastly, setup document ready callback. */
 $(document).ready(cswui.processDocument);

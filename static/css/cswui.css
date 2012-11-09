@@ -8,7 +8,7 @@
 
 
 .csw-three-left {
-	float:left;
+	/*float:left;*/
 	border-top:1px solid;
 	border-bottom:1px solid;
 	border-right:none;
@@ -19,7 +19,7 @@
 
 
 .csw-three-middle {
-	float:left;
+	/*float:left;*/
 	border-top:1px solid;
 	border-bottom:1px solid;
 	border-right:none;
@@ -29,7 +29,7 @@
 
 
 .csw-three-right {
-	float:left;
+	/*float:left;*/
 	border-top:1px solid;
 	border-bottom:1px solid;
 	border-right:1px solid;
@@ -40,12 +40,16 @@
 
 
 .csw-status {
+	display:inline-block;
 	width:16px;
+	height:16px;
 }
 
 
 .csw-value {
 	text-align:right;
+	display:inline-block;
+	width:50px;
 }
 input.csw-value {
 	border-style:none;
