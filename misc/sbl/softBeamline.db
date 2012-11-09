@@ -54,6 +54,14 @@ record(calcout, "PCT$(SBLNAME)-01:mA:calc") {
 	field(DTYP, "Soft Channel")
 	field(SCAN, "1 second")
 	field(INPA, "CLK$(SBLNAME)-101")
-	field(CALC, "LOG(1000-(A%1000))*83")
+	field(CALC, "(1.0/EXP((A%1000)/1000))*255")
 	field(OUT, "PCT$(SBLNAME)-01:mA:fbk PP")
+}
+
+# Beam Available #
+record(bi, "SR$(SBLNAME):Status") {
+	field(DESC, "Storage Ring Beam Availability")
+	field(DTYP, "Soft Channel")
+	field(ZNAM, "Beam Unavailable")
+	field(ONAM, "Beam Available")
 }

@@ -11,16 +11,13 @@ import sys, os.path
 csweb_home = os.path.dirname(os.path.abspath(os.path.dirname(sys.argv[0])))
 sys.path.append(csweb_home)
 
+from oauth import oauth
+
 from twisted.internet import reactor
-from twisted.web.server import Site
-from twisted.web.static import File
-from twisted.web.resource import Resource
-from twisted.web.websockets import WebSocketsResource
 
 from csweb import device
 from csweb.util import log
 from csweb.epics.provider import EpicsDeviceProvider
-from csweb.service.websocket import WebSocketDeviceProtocolFactory
 
 _TRACE = log.TRACE
 _DEBUG = log.DEBUG
@@ -43,8 +40,31 @@ epicsDeviceProvider = EpicsDeviceProvider();
 deviceManager.addProvider(epicsDeviceProvider)
 log.msg('start: Add EpicsDeviceProvider: %(d)s', d=epicsDeviceProvider, logLevel=_TRACE)
 
+# Setup Mail Notification #
+
+# from csweb.service.mail import MailNotifier
+
+# notifier = MailNotifier(("smtp.host.com", 25), "From Name <from@host.com>")
+# notifier.register("epics:SR2026X:Status", "Real Name <email@host.com>")
+
+
+# Setup Twitter Notification #
+
+# from csweb.service.twitter import TwitterNotifier
+
+# token = oauth.OAuthToken("TokenKey", "TokenSecret")
+# consumer = oauth.OAuthConsumer("ConsumerKey", "ConsumerSecret")
+# notifier = TwitterNotifier(consumer, token)
+# notifier.register("epics:SR2026X:Status")
+
 
 # Setup Web Resources #
+
+from twisted.web.server import Site
+from twisted.web.static import File
+from twisted.web.resource import Resource
+from twisted.web.websockets import WebSocketsResource
+from csweb.service.websocket import WebSocketDeviceProtocolFactory
 
 root = Resource()
 log.msg('start: Root Resource: %(r)s', r=root, logLevel=_TRACE)
@@ -61,11 +81,10 @@ staticFileResource = File(os.path.join(csweb_home, "static"))
 root.putChild("static", staticFileResource)
 log.msg('start: Resource added at "/static": %(r)s', r=staticFileResource, logLevel=_DEBUG)
 
-
-# Start the reactor #
-
 log.msg('start: Start listening default port: 8080', logLevel=_DEBUG)
 reactor.listenTCP(8080, Site(root))
+
+# Start the reactor #
 
 log.msg('start: Run the reactor', logLevel=_DEBUG)
 reactor.run()
