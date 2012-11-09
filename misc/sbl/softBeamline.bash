@@ -2,4 +2,4 @@
 
 DIRNAME=`dirname "$0"`
 
-exec softIoc -m "SBLNAME=2026X" -d "$DIRNAME/softBeamline.db"
+exec softIoc "$@" -m "SBLNAME=2026X" -d "$DIRNAME/softBeamline.db"
