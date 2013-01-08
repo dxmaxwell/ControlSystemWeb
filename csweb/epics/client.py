@@ -27,7 +27,7 @@ class ProcessVariableClientEndpoint:
     
     def connect(self, protocolFactory):
         log.msg("ProcessVariableClientEndpoint: connect: Protocol factory %(p)s", p=protocolFactory, logLevel=_DEBUG)
-        canceller = _ProcesssVariableCanceller()
+        canceller = _ProcesssVariableCanceller(self.pvname)
         deferred = defer.Deferred(canceller.cancel)
         canceller.connector = _ProcessVariableConnector(self.pvname, canceller, deferred, protocolFactory)
         log.msg("ProcessVariableClientEndpoint: connect: Process Variable Connector %(c)s", c=canceller.connector, logLevel=_DEBUG)
@@ -40,15 +40,17 @@ class _ProcesssVariableCanceller:
     Cancel pending connection to a Process Variable. 
     '''
     
-    def __init__(self):
+    def __init__(self, pvname):
+        self._pvname = pvname
         self.cancelled = False
         self.connector = None
     
-    def cancel(self, deferred):        
+    def cancel(self, deferred):
         self.cancelled = True
         if self.connector is not None:
             self.connector.stopConnecting()
-        deferred.errback()
+        if not deferred.called:
+            deferred.errback(Exception("Connection to '%s' canncelled." % (self._pvname,)))
 
 
 class _ProcessVariableConnector:
@@ -89,7 +91,7 @@ class _ProcessVariableConnector:
 
 
     def stopConnecting(self):
-        if self._pv is not None and self._protocol is not None:
+        if self._pv is not None and self._protocol is None:
             self._pv.disconnect()
             self._pv = None
 
