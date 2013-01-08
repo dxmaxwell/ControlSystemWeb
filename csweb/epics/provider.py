@@ -1,12 +1,18 @@
 # coding=UTF-8
 '''
 DeviceProvider interface for EPICS PVs.
+
+Supported URL:
+    epics:ProcessVariable
 '''
 
-from urlparse import urlparse
+from urllib import urlencode
+from urlparse import urlsplit, urlunsplit, parse_qsl
+
 
 from .client import ProcessVariableClientEndpoint
 
+from ..util.url import URL
 from ..util import log, dist
 
 from ..device.provider import DeviceProvider
@@ -18,7 +24,10 @@ _TRACE = log.TRACE
 _DEBUG = log.DEBUG
 _WARN = log.WARN
 
-_SUPPORTED_SCHEMES = [ 'epics' ]
+_EPICS_SCHEME = 'epics'
+
+
+URL.register_scheme(_EPICS_SCHEME)
 
 
 class EpicsDeviceProvider(DeviceProvider):
@@ -30,50 +39,55 @@ class EpicsDeviceProvider(DeviceProvider):
         self._subscriptions = {}
 
 
-    def subscribe(self, uri, protocolFactory):
+    def subscribe(self, url, protocolFactory):
         '''
         Subscribe to the specified EPICS PV.  
         '''
-        
         try:
-            result = self._supports(uri)
-            log.msg("EpicsDeviceProvider: subscribe: Supported URI: %(u)s", u=uri, logLevel=_DEBUG)
+            url = self._supports(url)
+            log.msg("EpicsDeviceProvider: subscribe: Supported URI: %(u)s", u=url, logLevel=_DEBUG)
         except Exception as fail:
-            log.msg("EpicsDeviceProvider: subscribe: Unsuppored URI: %(u)s", u=uri, logLevel=_WARN)
-        
-        pvname = result.path
-        
-        if pvname in self._subscriptions:
-            subscription = self._subscriptions[pvname]
+            log.msg("EpicsDeviceProvider: subscribe: Unsuppored URI: %(u)s", u=url, logLevel=_WARN)
+            # return something!
+
+        if str(url) in self._subscriptions:
+            subscription = self._subscriptions[str(url)]
         else:
-            subscription = _EpicsSubscription(pvname, self._subscriptions)
-           
+            pvname = URL.decode(url.path)
+            subscription = _EpicsSubscription(pvname, str(url), self._subscriptions)
+
         return subscription.addProtocolFactory(protocolFactory)
 
- 
-    def supports(self, uri):
-        try:
-            self._supports(uri)
-            return True
-        except:
-            return False
 
-
-    def _supports(self, uri):
-        result = urlparse(uri)
-        if result.scheme in _SUPPORTED_SCHEMES:
-            return result
-        else:
+    def _supports(self, url):
+        url = URL(url)
+        if url.scheme != _EPICS_SCHEME:
             raise NotSupportedError("Scheme (%s) not supported by EpicsDeviceProvider" % (result.scheme))
+
+        url.path = url.path.strip('/')
+        if url.path == '':
+            raise NotSupportedError("Path is empty, process variable must be specified")
+
+        url.merge_params()
+        url.query.clear()
+        return url
+
+
+    def supports(self, url):
+        try:
+            self._supports(url)
+            return True
+        except NotSupportedError:
+            return False
 
 
 class _EpicsSubscription:
 
     
-    def __init__(self, pvname, subscriptions):
-        self._pvname = pvname
+    def __init__(self, pvname, subkey, subscriptions):
+        self._subkey = subkey
         self._subscriptions = subscriptions
-        self._subscriptions[self._pvname] = self
+        self._subscriptions[self._subkey] = self
         self._pvclient = ProcessVariableClientEndpoint(pvname)
         self._protocolFactory = _EpicsSubscriptionProtocolFactory(self)
 
@@ -81,8 +95,8 @@ class _EpicsSubscription:
 
 
     def unsubscribe(self):
-        log.msg("_EpicsSubscription: unsubscribe: %(pv)s -> %(s)s", pv=self._pvname, s=self._subscriptions[self._pvname], logLevel=_DEBUG)
-        del self._subscriptions[self._pvname] 
+        log.msg("_EpicsSubscription: unsubscribe: %(pv)s -> %(s)s", pv=self._subkey, s=self._subscriptions[self._subkey], logLevel=_DEBUG)
+        del self._subscriptions[self._subkey]
 
 
     def _connCallback(self, protocol):
