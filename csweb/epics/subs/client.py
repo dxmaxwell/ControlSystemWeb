@@ -3,9 +3,6 @@
 Epics Client Subscription
 '''
 
-from urllib import urlencode
-from urlparse import urlsplit, urlunsplit, parse_qsl
-
 
 from ..client import ProcessVariableClientEndpoint
 
@@ -25,9 +22,13 @@ class EpicsClientSubscription:
         self._subkey = subkey
         self._subscriptions = subscriptions
         self._subscriptions[self._subkey] = self
-        self._pvclient = ProcessVariableClientEndpoint(pvname)
         self._protocolFactory = _EpicsClientSubscriptionProtocolFactory(self)
+        self._pvclient = ProcessVariableClientEndpoint(pvname)
         self._pvclient.connect(self._protocolFactory)
+
+
+    def __str__(self):
+        return self._subkey
 
 
     def unsubscribe(self):
@@ -50,12 +51,14 @@ class EpicsClientSubscription:
 
 class _EpicsClientSubscriptionCanceller:
 
-    def __init__(self):
+    def __init__(self, subscription):
+        self._subscription = subscription
         self.cancelled = False
 
     def cancel(self, deferred):
         self.cancelled = True
-        deferred.errback()
+        if not deferred.called:
+            deferred.errback(Exception("Connection to '%s' canncelled." % (self._subscription,)))
 
 
 class _EpicsClientSubscriptionProtocolFactory(dist.DistributingProtocolFactory):
@@ -67,7 +70,7 @@ class _EpicsClientSubscriptionProtocolFactory(dist.DistributingProtocolFactory):
 
 
     def addProtocolFactory(self, protocolFactory):
-        canceller = _EpicsClientSubscriptionCanceller()
+        canceller = _EpicsClientSubscriptionCanceller(self._subscription)
         deferred = defer.Deferred(canceller.cancel)
         if self._protocol is None:
             self._protocolFactories.append((deferred, canceller, protocolFactory))
@@ -119,16 +122,13 @@ class _EpicsClientSubscriptionProtocol(dist.DistributingProtocol):
     def removeProtocol(self, protocol):
         if protocol in self._protocols:
             log.msg('_EpicsClientSubscriptionProtocol: removeProtocol: Remove protocol: %(p)s', p=protocol, logLevel=_DEBUG)
-            
-            if len(self._protocols) == 1:
+            protocol.connectionLost("Connection closed cleanly")
+            self._protocols.remove(protocol)
+
+            if len(self._protocols) == 0:
                 log.msg('_EpicsClientSubscriptionProtocol: removeProtocol: No protocols remaining, so loseConnection', logLevel=_DEBUG)
                 self.transport.loseConnection()
                 self._subscription.unsubscribe()
-            else:
-                log.msg('_EpicsClientSubscriptionProtocol: removeProtocol: Protocols remaining, so connectionLost', logLevel=_DEBUG)
-                protocol.connectionLost("Connection closed cleanly")
-            
-            self._protocols.remove(protocol)
             
         else:
             log.msg('_EpicsClientSubscriptionProtocol: removeProtocol: Protocol not found %(p)s', p=protocol, logLevel=_WARN)
