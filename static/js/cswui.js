@@ -83,8 +83,17 @@ cswui.processReadOnlyField = function(elm) {
 cswui.processStripChart = function(elm) {
 
 	cswui.processGeneralField(elm);
+
+	$(elm).find('div[name=buffer]').each(function(idx, elx) {
+		elm.csw.buffer = $(elx).text();
+		$(elx).remove()
+	});
 	
 	elm.csw.deviceURI = elm.csw.device;
+
+	if(elm.csw.buffer) {
+		elm.csw.deviceURI += '?buffer=' + elm.csw.buffer;
+	}
 
 	$(elm).html(cswui.templates.stripChart);
 
@@ -113,12 +122,19 @@ cswui.processStripChart = function(elm) {
 			//	jmsg.value /= Math.pow(10,jmsg.precision);
 			//}
 
-			//var timestamp = 
-
-			if(elm.csw.chartdata.length>10000) {
-				elm.csw.chartdata.shift();
+			if($.isArray(jmsg)) {
+				for(idx in jmsg) {
+					elm.csw.chartdata.push([new Date(jmsg[idx].timestamp * 1000),jmsg[idx].value]);
+					if(elm.csw.chartdata.length>elm.csw.buffer) {
+						elm.csw.chartdata.shift();
+					}
+				}
+			} else {
+				elm.csw.chartdata.push([new Date(jmsg.timestamp * 1000),jmsg.value]);
+				if(elm.csw.chartdata.length>elm.csw.buffer) {
+					elm.csw.chartdata.shift();
+				}
 			}
-			elm.csw.chartdata.push([new Date(jmsg.timestamp * 1000),jmsg.value]);
 			elm.csw.dygraph.updateOptions({file:elm.csw.chartdata});
 
 			//var e = $(elm).find('.csw-value').get(0);

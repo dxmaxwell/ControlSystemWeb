@@ -3,7 +3,10 @@
 DeviceProvider interface for EPICS PVs.
 
 Supported URL:
-    epics:ProcessVariable
+    epics:ProcessVariable[?[buffer=<size>][&rate=<time>]]
+
+Supported Parameters:
+    buffer=<size>
 '''
 
 from urllib import urlencode
@@ -11,6 +14,7 @@ from urlparse import urlsplit, urlunsplit, parse_qsl
 
 
 from .subs.client import EpicsClientSubscription
+from .subs.buffer import EpicsBufferSubscription
 
 from ..util.url import URL
 from ..util import log, dist
@@ -25,6 +29,7 @@ _DEBUG = log.DEBUG
 _WARN = log.WARN
 
 _EPICS_SCHEME = 'epics'
+_EPICS_PARAM_BUFFER = 'buffer'
 
 
 URL.register_scheme(_EPICS_SCHEME)
@@ -50,11 +55,23 @@ class EpicsDeviceProvider(DeviceProvider):
             log.msg("EpicsDeviceProvider: subscribe: Unsuppored URI: %(u)s", u=url, logLevel=_WARN)
             # return something!
 
+
+        query = dict(url.query)
+        url.query.clear()
+
         if str(url) in self._subscriptions:
             subscription = self._subscriptions[str(url)]
         else:
             pvname = URL.decode(url.path)
             subscription = EpicsClientSubscription(pvname, str(url), self._subscriptions)
+
+        if _EPICS_PARAM_BUFFER in query:
+            url.query[_EPICS_PARAM_BUFFER] = query[_EPICS_PARAM_BUFFER]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+            else:
+                size = query[_EPICS_PARAM_BUFFER]
+                subscription = EpicsBufferSubscription(subscription, size, str(url), self._subscriptions)
 
         return subscription.addProtocolFactory(protocolFactory)
 
@@ -69,7 +86,20 @@ class EpicsDeviceProvider(DeviceProvider):
             raise NotSupportedError("Path is empty, process variable must be specified")
 
         url.merge_params()
-        url.query.clear()
+        url.params.set_sort_keys()
+        url.params.set_lower_keys()
+        url.params.retain((_EPICS_PARAM_BUFFER,))
+
+        if _EPICS_PARAM_BUFFER in url.query:
+            try:
+                url.query[_EPICS_PARAM_BUFFER] = int(url.query[_EPICS_PARAM_BUFFER])
+            except ValueError:
+                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+            if url.query[_EPICS_PARAM_BUFFER] < 1:
+                raise NotSupportedError("Parameter (%s) value < 1 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+            if url.query[_EPICS_PARAM_BUFFER] > 100000:
+                raise NotSupportedError("Parameter (%s) value > 100000 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+
         return url
 
 
