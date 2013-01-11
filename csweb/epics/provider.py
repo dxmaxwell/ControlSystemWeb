@@ -15,6 +15,8 @@ from urlparse import urlsplit, urlunsplit, parse_qsl
 
 from .subs.client import EpicsClientSubscription
 from .subs.buffer import EpicsBufferSubscription
+from .subs.rate import EpicsRateSubscription
+from .subs.rate import EpicsRateLimitSubscription
 
 from ..util.url import URL
 from ..util import log, dist
@@ -30,6 +32,8 @@ _WARN = log.WARN
 
 _EPICS_SCHEME = 'epics'
 _EPICS_PARAM_BUFFER = 'buffer'
+_EPICS_PARAM_RATE = 'rate'
+_EPICS_PARAM_RATE_LIMIT = 'ratelimit'
 
 
 URL.register_scheme(_EPICS_SCHEME)
@@ -65,6 +69,22 @@ class EpicsDeviceProvider(DeviceProvider):
             pvname = URL.decode(url.path)
             subscription = EpicsClientSubscription(pvname, str(url), self._subscriptions)
 
+        if _EPICS_PARAM_RATE in query:
+            url.query[_EPICS_PARAM_RATE] = query[_EPICS_PARAM_RATE]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+            else:
+                interval = query[_EPICS_PARAM_RATE]
+                subscription = EpicsRateSubscription(subscription, interval, str(url), self._subscriptions)
+
+        if _EPICS_PARAM_RATE_LIMIT in query:
+            url.query[_EPICS_PARAM_RATE_LIMIT] = query[_EPICS_PARAM_RATE_LIMIT]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+            else:
+                interval = query[_EPICS_PARAM_RATE_LIMIT]
+                subscription = EpicsRateLimitSubscription(subscription, interval, str(url), self._subscriptions)
+
         if _EPICS_PARAM_BUFFER in query:
             url.query[_EPICS_PARAM_BUFFER] = query[_EPICS_PARAM_BUFFER]
             if str(url) in self._subscriptions:
@@ -88,7 +108,26 @@ class EpicsDeviceProvider(DeviceProvider):
         url.merge_params()
         url.params.set_sort_keys()
         url.params.set_lower_keys()
-        url.params.retain((_EPICS_PARAM_BUFFER,))
+        url.params.retain((_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_BUFFER))
+
+        if _EPICS_PARAM_RATE in url.query and _EPICS_PARAM_RATE_LIMIT in url.query:
+            raise NotSupportedError("Parameters '%s' and '%s' are mutually exclusive" % (_EPICS_PARAM_RATE,_EPICS_PARAM_RATE_LIMIT))
+
+        if _EPICS_PARAM_RATE in url.query:
+            try:
+                url.query[_EPICS_PARAM_RATE] = float(url.query[_EPICS_PARAM_RATE])
+            except:
+                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+            if url.query[_EPICS_PARAM_RATE] <= 0.0:
+                raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+
+        if _EPICS_PARAM_RATE_LIMIT in url.query:
+            try:
+                url.query[_EPICS_PARAM_RATE_LIMIT] = float(url.query[_EPICS_PARAM_RATE_LIMIT])
+            except:
+                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
+            if url.query[_EPICS_PARAM_RATE_LIMIT] <= 0.0:
+                raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
 
         if _EPICS_PARAM_BUFFER in url.query:
             try:

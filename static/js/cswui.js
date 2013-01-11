@@ -35,7 +35,23 @@ cswui.processReadOnlyField = function(elm) {
 	
 	cswui.processGeneralField(elm);
 	
+	$(elm).find('div[name=rate]').each(function(idx, elx) {
+		elm.csw.rate = $(elx).text();
+		$(elx).remove()
+	});
+
+	$(elm).find('div[name=ratelimit]').each(function(idx, elx) {
+		elm.csw.ratelimit = $(elx).text();
+		$(elx).remove()
+	});
+
 	elm.csw.deviceURI = elm.csw.device;
+
+	if(elm.csw.rate) {
+		elm.csw.deviceURI += '?rate=' + elm.csw.rate
+	} else if(elm.csw.ratelimit) {
+		elm.csw.deviceURI += '?ratelimit=' + elm.csw.ratelimit
+	}
 
 	$(elm).html(cswui.templates.readOnlyField);
 
@@ -88,11 +104,27 @@ cswui.processStripChart = function(elm) {
 		elm.csw.buffer = $(elx).text();
 		$(elx).remove()
 	});
-	
+
+	$(elm).find('div[name=rate]').each(function(idx, elx) {
+		elm.csw.rate = $(elx).text();
+		$(elx).remove()
+	});
+
+	$(elm).find('div[name=ratelimit]').each(function(idx, elx) {
+		elm.csw.ratelimit = $(elx).text();
+		$(elx).remove()
+	});
+
 	elm.csw.deviceURI = elm.csw.device;
 
 	if(elm.csw.buffer) {
 		elm.csw.deviceURI += '?buffer=' + elm.csw.buffer;
+	}
+
+	if(elm.csw.rate) {
+		elm.csw.deviceURI += '&rate=' + elm.csw.rate;
+	} else if(elm.csw.ratelimit) {
+		elm.csw.deviceURI += '&ratelimit=' + elm.csw.ratelimit;
 	}
 
 	$(elm).html(cswui.templates.stripChart);
