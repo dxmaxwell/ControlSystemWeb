@@ -3,10 +3,12 @@
 DeviceProvider interface for EPICS PVs.
 
 Supported URL:
-    epics:ProcessVariable[?[buffer=<size>][&rate=<time>]]
+    epics:ProcessVariable[?[buffer=<size>][&[rate=<interval>]|[ratelimit=<interval>]]]
 
 Supported Parameters:
     buffer=<size>
+    rate=<interval>
+    ratelimit=<interval>
 '''
 
 from urllib import urlencode
@@ -30,13 +32,11 @@ _TRACE = log.TRACE
 _DEBUG = log.DEBUG
 _WARN = log.WARN
 
-_EPICS_SCHEME = 'epics'
+_EPICS_DEFAULT_SCHEME = 'epics'
 _EPICS_PARAM_BUFFER = 'buffer'
 _EPICS_PARAM_RATE = 'rate'
 _EPICS_PARAM_RATE_LIMIT = 'ratelimit'
 
-
-URL.register_scheme(_EPICS_SCHEME)
 
 
 class EpicsDeviceProvider(DeviceProvider):
@@ -44,8 +44,10 @@ class EpicsDeviceProvider(DeviceProvider):
     Implementation of DeviceProvider interface for accessing EPICS Channel Access.
     '''
 
-    def __init__(self):
+    def __init__(self, scheme=_EPICS_DEFAULT_SCHEME):
+        URL.register_scheme(scheme)
         self._subscriptions = {}
+        self._scheme = scheme
 
 
     def subscribe(self, url, protocolFactory):
@@ -98,7 +100,7 @@ class EpicsDeviceProvider(DeviceProvider):
 
     def _supports(self, url):
         url = URL(url)
-        if url.scheme != _EPICS_SCHEME:
+        if url.scheme != self._scheme:
             raise NotSupportedError("Scheme (%s) not supported by EpicsDeviceProvider" % (result.scheme))
 
         url.path = url.path.strip('/')

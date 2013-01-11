@@ -13,7 +13,8 @@ class URL:
 
     @staticmethod
     def register_scheme(scheme, uses_query=True):
-        if uses_query: urlparse.uses_query.append(scheme)
+        if uses_query and scheme not in urlparse.uses_query:
+            urlparse.uses_query.append(scheme)
 
 
     @staticmethod
