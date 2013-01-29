@@ -184,7 +184,8 @@ class _ProcessVariableConnector:
 
         # Delete 'cb_info' because it contains
         # values that cannot be serialized to JSON.
-        del self._data['cb_info']
+        if 'cb_info' in self._data:
+            del self._data['cb_info']
 
         # Ensure connection status is
         # synchronized with the data set.
