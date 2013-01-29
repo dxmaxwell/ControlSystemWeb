@@ -1,22 +1,17 @@
 # coding=UTF-8
 '''
 Send twitter notifications on events.
-
-NOTE: The Twitty Twister library uses the Twitter REST API v1.0
-      which to due to be depricated March 2013. This may need
-      to be reimplemented using an OAuth library directly if
-      no other suitable Twisted library can be found.
 '''
 
 from .. import device
 
 from ..util import log
 
+from ..util.twitter import Twitter
+
 from twisted.internet import protocol
 from twisted.internet import reactor
 from twisted.internet.defer import Deferred
-
-from twittytwister.twitter import Twitter
 
 
 _TRACE = log.TRACE

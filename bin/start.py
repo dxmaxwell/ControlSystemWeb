@@ -55,6 +55,7 @@ log.msg('start: Add EpicsDeviceProvider: %(d)s', d=epicsDeviceProvider, logLevel
 # token = oauth.OAuthToken("TokenKey", "TokenSecret")
 # consumer = oauth.OAuthConsumer("ConsumerKey", "ConsumerSecret")
 # notifier = TwitterNotifier(consumer, token)
+# log.msg('start: TwitterNotifier initialized.', logLevel=_DEBUG)
 # notifier.register("epics:SR2026X:Status")
 
 

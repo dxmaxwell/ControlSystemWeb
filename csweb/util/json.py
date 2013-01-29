@@ -14,6 +14,10 @@ def stringify(obj, sanitize=True):
     return json.dumps(obj, allow_nan=False)
 
 
+def parse(obj):
+    return json.loads(obj)
+
+
 def _sanitize(obj, level=0):
     if obj is None:
         return obj
