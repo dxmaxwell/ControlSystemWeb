@@ -63,9 +63,15 @@ input.csw-value {
 
 
 
-.csw-ws-disconnected {
+.csw-socket-closed {
 	background-image:url(../img/cross.png);
 	background-repeat:no-repeat;
 	/*height:17;width:16;*/
 }
 
+
+.csw-device-disconnected {
+	background-image:url(../img/disconnect.png);
+	background-repeat:no-repeat;
+	/*height:17;width:16;*/
+}

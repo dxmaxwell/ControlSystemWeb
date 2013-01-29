@@ -4,208 +4,352 @@
 
 var cswui = {};
 
-/*
- * Process document for 'csw' elements. Typically called only once when docuemnt is 'ready'.
- */
-cswui.processDocument = function() {	
-	cswui.ws = new csweb.WebSocket('ws://'+location.host+'/device/ws');
-	$('.csw-readonly-field').each(function(idx, elx) {
-		cswui.processReadOnlyField(elx);
-	});
-	$('.csw-strip-chart').each(function(idx, elx) {
-		cswui.processStripChart(elx);
-	});
-};
+
+(function() {
+
+	cswui.defaultDeviceProtocol = 'epics';
+
+	cswui.socket = new csweb.Socket('ws://'+location.host+'/device/ws');
+
+	cswui.fields = [];
+
+	/*
+	 * Process document for CSW elements.
+	 */
+	var process = function() {
+		$('.csw-strip-chart').each(function(idx, elx) {
+			cswui.fields.push(new cswui.StripChartField(elx));
+		});
+		$('.csw-readonly-field').each(function(idx, elx) {
+			cswui.fields.push(new cswui.ReadOnlyField(elx));
+		});
+	};
+
+	$(document).ready(process);
+
+})();
 
 
-cswui.processGeneralField = function(elm) {
+(function() {
 
-	if(!elm.csw) {
-		elm.csw = {};
-	}
+	var AbstractField = function(elm, tmpl) {
+		
+		if( !(this instanceof AbstractField) ) {
+			return new AbstractField(elm);
+		}
 
-	$(elm).find('div[name=device]').each(function(idx, elx) {
-		elm.csw.device = $(elx).text();
-		$(elx).remove()
-	});
-}
+		this.elm = elm;
+		this.options = {};
+		this.uri = new csweb.URI();
 
+		if( (elm === undefined) || (tmpl === undefined) ) {
+			return;
+		}
 
-cswui.processReadOnlyField = function(elm) {
-	
-	cswui.processGeneralField(elm);
-	
-	$(elm).find('div[name=rate]').each(function(idx, elx) {
-		elm.csw.rate = $(elx).text();
-		$(elx).remove()
-	});
+		this._prepareOptions();
 
-	$(elm).find('div[name=ratelimit]').each(function(idx, elx) {
-		elm.csw.ratelimit = $(elx).text();
-		$(elx).remove()
-	});
+		if( this._prepareURI() ) {
+			return;
+		}
 
-	elm.csw.deviceURI = elm.csw.device;
+		this._prepareElement(tmpl);
 
-	if(elm.csw.rate) {
-		elm.csw.deviceURI += '?rate=' + elm.csw.rate
-	} else if(elm.csw.ratelimit) {
-		elm.csw.deviceURI += '?ratelimit=' + elm.csw.ratelimit
-	}
+		this._prepareListeners();
+	};
 
-	$(elm).html(cswui.templates.readOnlyField);
+	cswui.AbstractField = AbstractField;
 
-	$(elm).find('.csw-status').first().addClass('csw-ws-disconnected');
+	AbstractField.template = '<span style="color:red;">{{message}}</span>';
 
 
-	if(cswui.ws.readyState == csweb.WebSocket.OPEN) {
-		console.log("Ready State is OPEN");
-		cswui.ws.subscribe(elm.csw.deviceURI);
-	}
-
-	$(cswui.ws).on("open", function(event) { 
-		cswui.ws.subscribe(elm.csw.deviceURI);
-		$(elm).find('.csw-status').first().removeClass('csw-ws-disconnected');
-	});
-	
-	$(cswui.ws).on("message", function(event) {
-		var jmsg = JSON.parse(event.message);
-		if(jmsg && jmsg[elm.csw.deviceURI]) {
-			jmsg = jmsg[elm.csw.deviceURI];
-			if(jmsg.precision !== null) {
-				jmsg.value *= Math.pow(10,jmsg.precision);
-				jmsg.value  = Math.round(jmsg.value);
-				jmsg.value /= Math.pow(10,jmsg.precision);
+	AbstractField.prototype._prepareOptions = function() {
+		var self = this;
+		$(this.elm).find('div').each(function(idx, elx) {
+			var name = $(elx).attr('name');
+			if( (name !== undefined) && (typeof name === 'string') ) {
+				self.options[name.toLowerCase()] = $(elx).text();
 			}
-			var e = $(elm).find('.csw-value').get(0);
-			$(e).html(jmsg.value);
+		});
+	};
 
-			if(jmsg.units !== null) {
-				var e = $(elm).find('.csw-units').get(0);
-				$(e).html(jmsg.units);
+	AbstractField.prototype._prepareURI = function() {
+		
+		var opt,val;
+
+		this.uri.scheme = cswui.defaultDeviceProtocol;
+
+		if( !('device' in this.options) ) {
+			$(this.elm).html(AbstractField.template);
+			return true;
+		}
+
+		this.uri.path = this.options['device'];
+
+
+		if( 'protocol' in this.options ) {
+			this.uri.scheme = this.options['protocol'];
+		}
+
+		if( 'rate' in this.options ) {
+
+			opt = 'rate';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "rate" option must have a numeric value.'));
+				return true;
+			}
+
+			if( val <= 0 ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "rate" option must have value > 0.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+
+		} else if( 'ratelimit' in this.options) {
+
+			opt = 'ratelimit';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "ratelimit" option must have a numeric value.'));
+				return true;
+			}
+
+			if( val <= 0 ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "ratelimit" option must have value > 0.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'buffer' in this.options ) {
+
+			opt = 'buffer';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "buffer" option must have a numeric value.'));
+				return true;
+			}
+
+			if( val <= 0 ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "buffer" option must have value > 0.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		return false;
+	};
+
+	AbstractField.prototype._prepareElement = function(tmpl) {
+		$(this.elm).html(tmpl);
+	};
+
+	AbstractField.prototype._prepareListeners = function() {
+
+		var self = this;
+		//
+		// The order of the following section is important
+		// because the 'open' event may occur during either
+		// the call to _socketOnClose() or _socketOnOpen().
+		//
+		if( cswui.socket.readyState !== csweb.Socket.OPEN ) {
+			this._socketOnClose();
+		} 
+
+		cswui.socket.addEventListener("open", function(event) {
+			self._socketOnOpen(event);
+		});
+
+		cswui.socket.addEventListener(this.uri.toString(), function(event) {
+			self._socketOnData(event);
+		});
+
+		cswui.socket.addEventListener("close", function(event) {
+			self._socketOnClose();
+		});
+
+		if( cswui.socket.readyState === csweb.Socket.OPEN ) {
+			this._socketOnOpen();
+		} 
+	};
+
+	AbstractField.prototype._socketOnOpen = function(event) {
+		cswui.socket.subscribe(this.uri);
+		this.opened();
+	};
+
+	AbstractField.prototype._socketOnClose = function(event) {
+		this.closed();
+	};
+
+	AbstractField.prototype._socketOnData = function(event) {
+		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
+			var data = event.data;
+			if( data.connected !== undefined ) {
+				if( data.connected ) {
+					this.connected();
+				} else {
+					this.disconnected();
+				}
 			}
 		}
-	});
+	};
+
+	AbstractField.prototype.opened = function() {
+		$(this.elm).find('.csw-status.csw-socket-closed').first().removeClass('csw-socket-closed');
+	};
+
+	AbstractField.prototype.closed = function() {
+		$(this.elm).find('.csw-status').first().addClass('csw-socket-closed');
+	};
+
+	AbstractField.prototype.connected = function() {
+		$(this.elm).find('.csw-status.csw-device-disconnected').first().removeClass('csw-device-disconnected');
+	};
+
+	AbstractField.prototype.disconnected = function() {
+		$(this.elm).find('.csw-status').first().addClass('csw-device-disconnected');
+	};
+
+})();
+
+
+
+(function() {
+
+
+	var ReadOnlyField = function(elm) {
+
+		if( !(this instanceof ReadOnlyField) ) {
+			return new ReadOnlyField(elm);
+		}
+
+		this.superclass(elm, ReadOnlyField.template);
+	};
+
+	cswui.ReadOnlyField = ReadOnlyField;
+
+	ReadOnlyField.template = '<div>' + 
+								'<span class="csw-status"/>' + 
+								'<span>&nbsp;</span>' + 
+								'<span class="csw-value"/>' + 
+								'<span>&nbsp;</span>' + 
+								'<span class="csw-units"/>' +
+							'</div>'
+
+
+	ReadOnlyField.prototype = new cswui.AbstractField();
+	ReadOnlyField.prototype.superclass = cswui.AbstractField;
+	ReadOnlyField.prototype.constructor = ReadOnlyField;
 	
-	$(cswui.ws).on("error", function(event) {
-		//alert("Got Error!");
-	});
+
+	ReadOnlyField.prototype._socketOnData = function(event) {
+		cswui.AbstractField.prototype._socketOnData.call(this, event);
+		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
+			var data = event.data;
+			if( (data.precision !== undefined) && (typeof data.precision === 'number') ) {
+				data.value *= Math.pow(10,data.precision);
+				data.value  = Math.round(data.value);
+				data.value /= Math.pow(10,data.precision);
+			}
+
+			var e = $(this.elm).find('.csw-value').get(0);
+			$(e).html(data.value);
+
+			if( (data.units !== undefined) && (typeof data.units === 'string') ) {
+				var e = $(this.elm).find('.csw-units').get(0);
+				$(e).html(data.units);
+			}
+		}
+	};
+
+})();
+
+
+(function() {
+
+
+	var StripChartField = function(elm) {
+
+		if( !(this instanceof StripChartField) ) {
+			return new StripChartField(elm);
+		}
+
+		this.dygraph = null;
+		this.chartdata = [];
+		this.superclass(elm, StripChartField.template);
+	};
+
+	cswui.StripChartField = StripChartField;
+
+	StripChartField.template = '<div class="csw-dygraph"/>' + 
+								'<div class="csw-status"/>'
+
+	StripChartField.defaultMaxChartSize = 10000;
+
+
+	StripChartField.prototype = new cswui.AbstractField();
+	StripChartField.prototype.superclass = cswui.AbstractField;
+	StripChartField.prototype.constructor = StripChartField;
+
 	
-	$(cswui.ws).on("close", function(event) {
-		$(elm).find('.csw-status').first().addClass('csw-ws-disconnected');
-	});
-};
+	StripChartField.prototype._prepareElement = function(tmpl) {
+		cswui.AbstractField.prototype._prepareElement.call(this, tmpl);
+		var e = $(this.elm).find('.csw-dygraph').get(0);
+		this.dygraph = new Dygraph(e);
+	};
 
-cswui.processStripChart = function(elm) {
-
-	cswui.processGeneralField(elm);
-
-	$(elm).find('div[name=buffer]').each(function(idx, elx) {
-		elm.csw.buffer = $(elx).text();
-		$(elx).remove()
-	});
-
-	$(elm).find('div[name=rate]').each(function(idx, elx) {
-		elm.csw.rate = $(elx).text();
-		$(elx).remove()
-	});
-
-	$(elm).find('div[name=ratelimit]').each(function(idx, elx) {
-		elm.csw.ratelimit = $(elx).text();
-		$(elx).remove()
-	});
-
-	elm.csw.deviceURI = elm.csw.device;
-
-	if(elm.csw.buffer) {
-		elm.csw.deviceURI += '?buffer=' + elm.csw.buffer;
-	}
-
-	if(elm.csw.rate) {
-		elm.csw.deviceURI += '&rate=' + elm.csw.rate;
-	} else if(elm.csw.ratelimit) {
-		elm.csw.deviceURI += '&ratelimit=' + elm.csw.ratelimit;
-	}
-
-	$(elm).html(cswui.templates.stripChart);
-
-	var e = $(elm).find('.csw-dygraph').get(0);
-
-	elm.csw.dygraph = new Dygraph(e);
-	elm.csw.chartdata = [];
-
-	if(cswui.ws.readyState == csweb.WebSocket.OPEN) {
-		console.log("Ready State is OPEN");
-		cswui.ws.subscribe(elm.csw.deviceURI);
-	}
-
-	$(cswui.ws).on("open", function(event) { 
-		cswui.ws.subscribe(elm.csw.deviceURI);
-		$(elm).find('.csw-status').first().removeClass('csw-ws-disconnected');
-	});
-	
-	$(cswui.ws).on("message", function(event) {
-		var jmsg = JSON.parse(event.message);
-		if(jmsg && jmsg[elm.csw.deviceURI]) {
-			jmsg = jmsg[elm.csw.deviceURI];
-			//if(jmsg.precision !== null) {
-			//	jmsg.value *= Math.pow(10,jmsg.precision);
-			//	jmsg.value  = Math.round(jmsg.value);
-			//	jmsg.value /= Math.pow(10,jmsg.precision);
-			//}
-
-			if($.isArray(jmsg)) {
-				for(idx in jmsg) {
-					elm.csw.chartdata.push([new Date(jmsg[idx].timestamp * 1000),jmsg[idx].value]);
-					if(elm.csw.chartdata.length>elm.csw.buffer) {
-						elm.csw.chartdata.shift();
+	StripChartField.prototype._socketOnData = function(event) {
+		cswui.AbstractField.prototype._socketOnData.call(this, event);
+		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
+			var data = event.data;			
+			if( data.length !== undefined ) {
+				for(var idx=0; idx<data.length; idx++) {
+					this.chartdata.push([new Date(data[idx].timestamp * 1000),data[idx].value]);
+					if(this.chartdata.length > this._getMaxChartSize() ) {
+						this.chartdata.shift();
 					}
 				}
 			} else {
-				elm.csw.chartdata.push([new Date(jmsg.timestamp * 1000),jmsg.value]);
-				if(elm.csw.chartdata.length>elm.csw.buffer) {
-					elm.csw.chartdata.shift();
+				this.chartdata.push([new Date(data.timestamp * 1000),data.value]);
+				if(this.chartdata.length > this._getMaxChartSize() ) {
+					this.chartdata.shift();
 				}
 			}
-			elm.csw.dygraph.updateOptions({file:elm.csw.chartdata});
+			this.dygraph.updateOptions({file:this.chartdata});
 
-			//var e = $(elm).find('.csw-value').get(0);
-			//$(e).html(jmsg.value);
-
-			//if(jmsg.units !== null) {
-			//	var e = $(elm).find('.csw-units').get(0);
-			//	$(e).html(jmsg.units);
-			//}
-
-			if(jmsg.units !== null) {
-				elm.csw.dygraph.updateOptions({ylabel:elm.csw.device + ' [' + jmsg.units + ']','yAxisLabelWidth':75, xAxisLabelWidth:75});
+			if(data.units) {
+				this.dygraph.updateOptions({ylabel:this.options.device + ' [' + data.units + ']','yAxisLabelWidth':75, xAxisLabelWidth:75});
 			}
 		}
-	});
-
-	$(cswui.ws).on("error", function(event) {
-		//alert("Got Error!");
-	});
+	};
 	
-	$(cswui.ws).on("close", function(event) {
-		$(elm).find('.csw-status').first().addClass('csw-ws-disconnected');
-	});
-};
+	StripChartField.prototype._getMaxChartSize = function() {
+		if( this.options.buffer === undefined ) {
+			return StripChartField.defaultMaxChartSize;
+		}
+		if( typeof this.options.buffer !== 'number') {
+			return StripChartField.defaultMaxChartSize;
+		}
+		if( this.options.buffer <= 0 ) {
+			return StripChartField.defaultMaxChartSize;
+		}
+		return this.options.buffer;
+	};
 
-cswui.templates = {
-	'readOnlyField':
-		'<div>' + 
-			'<span class="csw-status"/>' + 
-			'<span>&nbsp;</span>' + 
-			'<span class="csw-value"/>' + 
-			'<span>&nbsp;</span>' + 
-			'<span class="csw-units"/>' +
-		'</div>',
-
-	'stripChart':
-		'<div class="csw-dygraph">' + '</div>' +
-		'<div class="csw-status"/>'
-};
-
-/* Lastly, setup document ready callback. */
-$(document).ready(cswui.processDocument);
+})();
