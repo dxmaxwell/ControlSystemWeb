@@ -5,9 +5,12 @@ A Twisted enabled Twitter utility.
 (This could eventually become a separate library.)
 '''
 
-import oauth2 as oauth
+try:
+    from cStringIO import StringIO
+except:
+    from  StringIO import StringIO
 
-from StringIO import StringIO
+import oauth2 as oauth
 
 from ..util import log, json
 
@@ -38,7 +41,7 @@ class Twitter:
         parameters = { 'status':status }
         http_url = TWITTER_BASE_URL + '/statuses/update.json'
 
-        log.msg("Twitter: update: Request status update: %(s)s", s=status, logLevel=_DEBUG)
+        log.msg("Twitter: update: New status: %(s)s", s=status, logLevel=_DEBUG)
         oauth_request = oauth.Request.from_consumer_and_token(self._consumer, token=self._token, http_method='POST', http_url=http_url, parameters=parameters)
         oauth_request.sign_request(oauth.SignatureMethod_HMAC_SHA1(), self._consumer, self._token);
         
@@ -81,7 +84,6 @@ class _TwitterResponseProtocol(protocol.Protocol):
 
     def connectionMade(self):
         log.msg("_TwitterResponseProtocol: connectionMade: Log Connection Made", logLevel=_DEBUG)
-        pass
 
 
     def dataReceived(self, data):
