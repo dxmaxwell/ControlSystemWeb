@@ -11,8 +11,6 @@ import sys, os.path
 csweb_home = os.path.dirname(os.path.abspath(os.path.dirname(sys.argv[0])))
 sys.path.append(csweb_home)
 
-from oauth import oauth
-
 from twisted.internet import reactor
 
 from csweb import device
@@ -50,6 +48,7 @@ log.msg('start: Add EpicsDeviceProvider: %(d)s', d=epicsDeviceProvider, logLevel
 
 # Setup Twitter Notification #
 
+# from oauth import oauth
 # from csweb.service.twitter import TwitterNotifier
 
 # token = oauth.OAuthToken("TokenKey", "TokenSecret")
@@ -64,7 +63,7 @@ log.msg('start: Add EpicsDeviceProvider: %(d)s', d=epicsDeviceProvider, logLevel
 from twisted.web.server import Site
 from twisted.web.static import File
 from twisted.web.resource import Resource
-from twisted.web.websockets import WebSocketsResource
+from csweb.twisted.websockets import WebSocketsResource
 from csweb.service.websocket import WebSocketDeviceProtocolFactory
 
 root = Resource()
