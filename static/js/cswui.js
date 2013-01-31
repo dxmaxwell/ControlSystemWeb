@@ -9,7 +9,7 @@ var cswui = {};
 
 	cswui.defaultDeviceProtocol = 'epics';
 
-	cswui.socket = new csweb.Socket('ws://'+location.host+'/device/ws');
+	cswui.socket = new csweb.Socket('ws://'+location.host+'/websocket/device');
 
 	cswui.fields = [];
 
