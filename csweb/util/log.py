@@ -15,18 +15,37 @@ WARN     = logging.WARN     # 30
 ERROR    = logging.ERROR    # 40
 FATAL    = logging.FATAL    # 50
 
+_LEVEL = NOTSET
+
 
 def startLogging(*args, **kwargs):
-	return log.startLogging(*args, **kwargs)
+    log.startLogging(*args, **kwargs)
 
 
-def msg(msg=None, **kwargs):    
-    if msg is not None:
-        kwargs['format'] = msg
-    return log.msg(**kwargs)
+def getLevel():
+    return _LEVEL
+
+
+def setLevel(level):
+    global _LEVEL
+    _LEVEL = level
+
+
+def msg(msg=None, **kwargs):
+    global _LEVEL
+    if 'logLevel' not in kwargs:
+        kwargs['logLevel'] = NOTSET
+    if kwargs['logLevel'] >= _LEVEL:
+        if msg is not None:
+            kwargs['format'] = msg
+        log.msg(**kwargs)
 
 
 def err(msg=None, **kwargs):
-	if msg is not None:
-		kwargs['format'] = msg
-	return log.err(**kwargs)
+    global _LEVEL
+    if 'logLevel' not in kwargs:
+        kwargs['logLevel'] = NOTSET
+    if kwargs['logLevel'] >= _LEVEL:
+        if msg is not None:
+            kwargs['format'] = msg
+        log.err(**kwargs)
