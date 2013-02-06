@@ -156,10 +156,8 @@ class _ParamMap(MutableMapping):
             key = key.upper()
         for idx in range(len(self._parameters)):
             if key == self._parameters[idx][0]:
-                params = self._parameters[0:idx]
-                params.append((key, value))
-                params.extend(self._parameters[idx:])
-                self._parameters = params
+                self._parameters.pop(idx)
+                self._parameters.insert(idx, (key, value))
                 break;
         else:
             self._parameters.append((key, value))
@@ -174,9 +172,7 @@ class _ParamMap(MutableMapping):
             key = key.upper()
         for idx in range(len(self._parameters)):
             if key == self._parameters[idx][0]:
-                params = self._parameters[0:idx]
-                params.extend(self._parameters[idx+1:])
-                self._parameters = params
+                self._parameters.pop(idx)
                 break;
         else:
             raise KeyError()
