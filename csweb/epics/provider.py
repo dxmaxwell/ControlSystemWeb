@@ -154,7 +154,7 @@ class EpicsDeviceProvider(DeviceProvider):
             try:
                 url.query[_EPICS_PARAM_RATE] = float(url.query[_EPICS_PARAM_RATE])
             except:
-                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
             if url.query[_EPICS_PARAM_RATE] <= 0.0:
                 raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
 
@@ -180,7 +180,7 @@ class EpicsDeviceProvider(DeviceProvider):
             try:
                 url.query[_EPICS_PARAM_RATE_LIMIT] = float(url.query[_EPICS_PARAM_RATE_LIMIT])
             except:
-                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
+                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
             if url.query[_EPICS_PARAM_RATE_LIMIT] <= 0.0:
                 raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
 
