@@ -3,7 +3,7 @@
 Initialize mail notifier.
 '''
 
-# from csweb.service.mail import MailNotifier
+# from csweb.notify.mail import MailNotifier
 
 # mailNotifier = MailNotifier(("smtp.host.com", 25), "From Name <from@host.com>")
 # log.msg('mailnotifier.py: MailNotifier: %(d)s', d=mailNotifier, logLevel=_INFO)

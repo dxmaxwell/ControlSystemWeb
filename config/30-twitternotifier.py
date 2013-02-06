@@ -4,7 +4,7 @@ Initialize Twitter notifier.
 '''
 
 # from oauth import oauth
-# from csweb.service.twitter import TwitterNotifier
+# from csweb.notify.twitter import TwitterNotifier
 
 # token = oauth.OAuthToken("TokenKey", "TokenSecret")
 # consumer = oauth.OAuthConsumer("ConsumerKey", "ConsumerSecret")
