@@ -10,6 +10,6 @@ Initialize Twitter notifier.
 # consumer = oauth.OAuthConsumer("ConsumerKey", "ConsumerSecret")
 
 # twitterNotifier = TwitterNotifier(consumer, token)
-# log.msg('twitternotifier.py: TwitterNotifier: %(d)s', d=twitterNotifier, logLevel=_DEBUG)
+# log.msg('twitternotifier.py: TwitterNotifier: %(d)s', d=twitterNotifier, logLevel=_INFO)
 
 # twitterNotifier.register("epics:SR2026X:Status")
