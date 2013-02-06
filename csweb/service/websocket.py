@@ -64,7 +64,7 @@ class WebSocketDeviceProtocol(protocol.Protocol):
             log.msg("WebSocketDeviceProtocol: _handleSubscribe: Add subsciption %(s)s", s=subscription, logLevel=_TRACE)
             self._subscriptions[request.url] = subscription
         else:
-            log.msg("WebSocketDeviceProtocol: _handleSubscribe: Subsciption found for URL %(r)s", r=request, logLevel=_DEBUG)
+            log.msg("WebSocketDeviceProtocol: _handleSubscribe: Subsciption found for URL %(r)s", r=request, logLevel=_TRACE)
             self._subscriptions[request.url].writeData()
 
 
@@ -79,7 +79,7 @@ class _WebSocketDeviceSubscription:
 
     def writeData(self):
         if self._protocol is not None:
-            log.msg("_WebSocketDeviceSubscription: writeData: Protocol %(p)s", p=self._protocol, logLevel=_DEBUG)
+            log.msg("_WebSocketDeviceSubscription: writeData: Protocol %(p)s", p=self._protocol, logLevel=_TRACE)
             self._protocol.writeData()
         else:
             log.msg("_WebSocketDeviceSubscription: writeData: Protocol has not been initialized", logLevel=_DEBUG)
@@ -120,7 +120,7 @@ class WSDeviceSubscriptionProtocol(protocol.Protocol):
             
     
     def dataReceived(self, data):
-        log.msg("WSDeviceSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_DEBUG)
+        log.msg("WSDeviceSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
         self._data = { self._url : data }
         self.writeData()
     
@@ -137,7 +137,7 @@ class WSDeviceSubscriptionProtocol(protocol.Protocol):
 
     def writeData(self):
         if self._data is not None:
-            log.msg("WSDeviceSubscriptionProtocol: writeData: Write data to WebSocket as JSON", logLevel=_DEBUG)
+            log.msg("WSDeviceSubscriptionProtocol: writeData: Write data to WebSocket as JSON", logLevel=_TRACE)
             try: 
                 jsondata = json.stringify(self._data, sanitize=True)
             except Exception as e:
