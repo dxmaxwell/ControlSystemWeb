@@ -131,6 +131,51 @@ var cswui = {};
 			this.uri.query[opt] = val;
 		}
 
+		if( 'lowedge' in this.options ) {
+
+			opt = 'lowedge';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "lowedge" option must have a numeric value.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'highedge' in this.options ) {
+
+			opt = 'highedge';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "highedge" option must have a numeric value.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'threshold' in this.options ) {
+
+			opt = 'threshold';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "threshold" option must have a numeric value.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
 		if( 'buffer' in this.options ) {
 
 			opt = 'buffer';
