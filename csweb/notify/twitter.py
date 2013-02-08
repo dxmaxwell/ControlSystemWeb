@@ -32,7 +32,7 @@ class TwitterNotifier:
             protocolFactory = TwitterNotifierSubscriptionProtocolFactory(url, self)
             deferred = device.subscribe(url, protocolFactory)
             subscription = _TwitterNotifierSubscription(deferred)
-            log.msg("TwitterNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_TRACE)
+            log.msg("TwitterNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_DEBUG)
             self._subscriptions[url] = subscription
         else:
             log.msg("TwitterNotifier: register: Subsciption found for URL %(r)s", r=url, logLevel=_DEBUG)
@@ -48,7 +48,7 @@ class TwitterNotifier:
         else:
             msg += "(UNKNOWN)"
 
-        log.msg("TwitterNotifier: notify: Message: %(m)s", m=msg, logLevel=_TRACE)
+        log.msg("TwitterNotifier: notify: Message: %(m)s", m=msg, logLevel=_DEBUG)
         twitterDeferred = self._twitter.update(msg)
         twitterDeferred.addCallback(self._notify_callback)
         twitterDeferred.addErrback(self._notify_errback)
@@ -80,7 +80,7 @@ class _TwitterNotifierSubscription:
     
  	
     def _subscribeErrback(self, failure):
-        log.msg("_TwitterNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_DEBUG)
+        log.msg("_TwitterNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_WARN)
 
 
 
@@ -95,7 +95,7 @@ class TwitterNotifierSubscriptionProtocol(protocol.Protocol):
     
 
     def dataReceived(self, data):
-        log.msg("TwitterNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_DEBUG)
+        log.msg("TwitterNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
         self._notifier.notify(self._url, data)
         
 

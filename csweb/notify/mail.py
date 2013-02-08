@@ -46,7 +46,7 @@ class MailNotifier:
             protocolFactory = MailNotifierSubscriptionProtocolFactory(url, self)
             deferred = device.subscribe(url, protocolFactory)
             subscription = _MailNotifierSubscription(deferred)
-            log.msg("MailNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_TRACE)
+            log.msg("MailNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_DEBUG)
             self._subscriptions[url] = subscription
         else:
             log.msg("MailNotifier: register: Subsciption found for URL %(r)s", r=url, logLevel=_DEBUG)
@@ -64,10 +64,10 @@ class MailNotifier:
         else:
             msg += "(UNKNOWN)"
 
-        log.msg("MailNotifier: notify: Message: %(m)s", m=msg, logLevel=_TRACE)
+        log.msg("MailNotifier: notify: Message: %(m)s", m=msg, logLevel=_DEBUG)
 
         for dest in destinations:
-            log.msg("MailNotifier: notify: Send to %(d)s", d=dest, logLevel=_TRACE)
+            log.msg("MailNotifier: notify: Send to %(d)s", d=dest, logLevel=_DEBUG)
             mime = MIMEText(msg)
             mime['To'] = formataddr(dest)
             mime['From'] =  formataddr(self._from)
@@ -116,7 +116,7 @@ class _MailNotifierSubscription:
         
         
     def _subscribeErrback(self, failure):
-        log.msg("_MailNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_DEBUG)
+        log.msg("_MailNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_WARN)
 
 
 
@@ -140,7 +140,7 @@ class MailNotifierSubscriptionProtocol(protocol.Protocol):
         
 
     def dataReceived(self, data):
-        log.msg("MailNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_DEBUG)
+        log.msg("MailNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
         self._notifier.notify(self._url, data, self._destinations)
         
 
