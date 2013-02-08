@@ -92,16 +92,12 @@ class TwitterNotifierSubscriptionProtocol(protocol.Protocol):
     def __init__(self, url, notifier):
         self._url = url
         self._notifier = notifier
-        self._dataReceived = False
     
 
     def dataReceived(self, data):
         log.msg("TwitterNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_DEBUG)
-        # Ignore the first call that occurs when the device initially connects.
-        if self._dataReceived:
-            self._notifier.notify(self._url, data)
-        else:
-            self._dataReceived = True
+        self._notifier.notify(self._url, data)
+        
 
 
 class TwitterNotifierSubscriptionProtocolFactory(protocol.Factory):

@@ -129,7 +129,6 @@ class MailNotifierSubscriptionProtocol(protocol.Protocol):
         self._url = url
         self._notifier = notifier
         self._destinations = []
-        self._dataReceived = False
 
 
     def addDestination(self, dest):
@@ -142,11 +141,8 @@ class MailNotifierSubscriptionProtocol(protocol.Protocol):
 
     def dataReceived(self, data):
         log.msg("MailNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_DEBUG)
-        # Ignore the first call that occurs when the device initially connects.
-        if self._dataReceived:
-            self._notifier.notify(self._url, data, self._destinations)
-        else:
-            self._dataReceived = True
+        self._notifier.notify(self._url, data, self._destinations)
+        
 
 
 class MailNotifierSubscriptionProtocolFactory(protocol.Factory):
