@@ -34,6 +34,7 @@ from ..util import log, dist
 from ..device.provider import DeviceProvider
 from ..device.manager import NotSupportedError
 
+from twisted.python.failure import Failure
 from twisted.internet import defer, protocol, reactor
 
 _TRACE = log.TRACE
@@ -68,9 +69,11 @@ class EpicsDeviceProvider(DeviceProvider):
         try:
             url = self._supports(url)
             log.msg("EpicsDeviceProvider: subscribe: Supported URI: %(u)s", u=url, logLevel=_DEBUG)
-        except Exception as fail:
+        except:
+            d = defer.Deferred()
+            reactor.callLater(0, d.errback, Failure())
             log.msg("EpicsDeviceProvider: subscribe: Unsuppored URI: %(u)s", u=url, logLevel=_WARN)
-            # return something!
+            return d
 
 
         query = dict(url.query)
