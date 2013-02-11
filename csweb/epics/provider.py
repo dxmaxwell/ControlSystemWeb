@@ -78,57 +78,71 @@ class EpicsDeviceProvider(DeviceProvider):
 
         if str(url) in self._subscriptions:
             subscription = self._subscriptions[str(url)]
+            log.msg("EpicsDeviceProvider: subscribe: EpicsClientSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
         else:
             pvname = URL.decode(url.path)
             subscription = EpicsClientSubscription(pvname, str(url), self._subscriptions)
+            log.msg("EpicsDeviceProvider: subscribe: EpicsClientSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_RATE in query:
             url.query[_EPICS_PARAM_RATE] = query[_EPICS_PARAM_RATE]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsRateSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 interval = query[_EPICS_PARAM_RATE]
                 subscription = EpicsRateSubscription(subscription, interval, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsRateSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_LOWEDGE in query:
             url.query[_EPICS_PARAM_LOWEDGE] = query[_EPICS_PARAM_LOWEDGE]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsLowEdgeSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 value = query[_EPICS_PARAM_LOWEDGE]
                 subscription = EpicsLowEdgeSubscription(subscription, value, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsLowEdgeSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_HIGHEDGE in query:
             url.query[_EPICS_PARAM_HIGHEDGE] = query[_EPICS_PARAM_HIGHEDGE]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsHighEdgeSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 value = query[_EPICS_PARAM_HIGHEDGE]
                 subscription = EpicsHighEdgeSubscription(subscription, value, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsHighEdgeSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_THRESHOLD in query:
             url.query[_EPICS_PARAM_THRESHOLD] = query[_EPICS_PARAM_THRESHOLD]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsThresholdSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 value = query[_EPICS_PARAM_THRESHOLD]
                 subscription = EpicsThresholdSubscription(subscription, value, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsThresholdSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_RATE_LIMIT in query:
             url.query[_EPICS_PARAM_RATE_LIMIT] = query[_EPICS_PARAM_RATE_LIMIT]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsRateLimitSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 interval = query[_EPICS_PARAM_RATE_LIMIT]
                 subscription = EpicsRateLimitSubscription(subscription, interval, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsRateLimitSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_BUFFER in query:
             url.query[_EPICS_PARAM_BUFFER] = query[_EPICS_PARAM_BUFFER]
             if str(url) in self._subscriptions:
                 subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsBufferSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
             else:
                 size = query[_EPICS_PARAM_BUFFER]
                 subscription = EpicsBufferSubscription(subscription, size, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsBufferSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         return subscription.addProtocolFactory(protocolFactory)
 
