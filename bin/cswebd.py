@@ -5,7 +5,7 @@ Startup script for Control System Web.
 
 import sys, os.path, glob
 
-# Setup python search path before importing modules from 'csw' #
+# Setup python search path before importing modules from 'csweb' #
 csweb_home = os.path.dirname(os.path.abspath(os.path.dirname(sys.argv[0])))
 sys.path.append(csweb_home)
 
@@ -27,7 +27,7 @@ except Exception as e:
 
 
 # Start the reactor #
-log.msg('start.py: Run the reactor', logLevel=_DEBUG)
+log.msg('start.py: Run the reactor', logLevel=_INFO)
 reactor.run()
 # Wait for reactort #
-log.msg('start.py: Reactor stopped.', logLevel=_DEBUG)
+log.msg('start.py: Reactor stopped.', logLevel=_INFO)
