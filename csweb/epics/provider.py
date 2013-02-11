@@ -156,6 +156,10 @@ class EpicsDeviceProvider(DeviceProvider):
         if url.path == '':
             raise NotSupportedError("Path is empty, process variable must be specified")
 
+        # The specified URL path (ie PV name) may or may not be URL encoded,
+        # in order to normalize the path properly always decode then encode.
+        url.path = URL.encode(URL.decode(url.path))
+
         url.merge_params()
         url.params.set_sort_keys()
         url.params.set_lower_keys()
