@@ -35,6 +35,7 @@ class WebSocketDeviceProtocol(protocol.Protocol):
 
     def connectionMade(self):
         log.msg("WebSocketDeviceProtocol: connectionMade: Log connection established.", logLevel=_DEBUG)
+        self.transport.write("") # Work-around to finalize connection with on Windows clients.
         
     
     def dataReceived(self, data):

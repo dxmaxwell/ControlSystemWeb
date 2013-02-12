@@ -287,7 +287,12 @@ var csweb = {};
 		this.dispatchEvent(event);
 	};
 
-	Socket.prototype._socketOnMessage = function(event) {
+	Socket.prototype._socketOnMessage = function(event) {		
+		// An empty message is sent by the server to finalize
+		// the connection with Windows clients. Ignore this message!
+		if( (event.data === undefined) || (event.data.length === 0) ) {
+			return;
+		}
 		this.dispatchEvent(event);
 		// Attempt to parse data and dispatch the events. //
 		try {
