@@ -476,6 +476,9 @@ class WebSocketsResource(object):
         # are added, and it *does* work as advertised.
         codec = request.getHeader("Sec-WebSocket-Protocol")
 
+        if codec == 'undefined':
+            codec = None
+
         if codec:
             if codec not in _encoders or codec not in _decoders:
                 log.msg("Codec %s is not implemented" % codec)
