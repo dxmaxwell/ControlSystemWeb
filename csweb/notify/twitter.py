@@ -64,4 +64,4 @@ class TwitterNotifier(Notifier):
 
 
     def _toHashTag(self, s):
-        return '#' + s.replace(':', '')
+        return '#' + s.replace(':','').replace('-','')
