@@ -10,15 +10,14 @@ except:
 
 import base64, urllib
 
+import oauth2 as oauth
+
 from ..util import log
 
 from twisted.web.http_headers import Headers
 from twisted.web.client import FileBodyProducer, ResponseDone, Agent
 from twisted.internet import defer, reactor, protocol
 from twisted.python.failure import Failure
-
-from twisted.web.http_headers import Headers
-from twisted.web.client import FileBodyProducer, ResponseDone, Agent
 
 
 _TRACE = log.TRACE
@@ -35,13 +34,13 @@ class HTTPAgent():
     def request(self, method, uri, headers=None, body=None):
         log.msg("HTTPAgent: request: Headers:'%(h)s' Body:'%(b)s'", h=headers, b=body, logLevel=_TRACE)
         d = defer.Deferred()
-        twBody = self._prepareBody(body)
-        twHeaders = self._prepareHeaders(headers)
+        twBody = self._prepareBody(method, uri, headers, body)
+        twHeaders = self._prepareHeaders(method, uri, headers, body)
         _HTTPAgentRequester(d, method, uri, twHeaders, twBody)
         return d
 
 
-    def _prepareBody(self, body):
+    def _prepareBody(self, method, uri, headers, body):
         twBody = None
         if isinstance(body, dict):
             self._urlencoded = True
@@ -53,7 +52,7 @@ class HTTPAgent():
         return twBody
 
 
-    def _prepareHeaders(self, headers):
+    def _prepareHeaders(self, method, uri, headers, body):
         twHeaders = None
         if isinstance(headers, Headers):
             twHeaders = headers
@@ -76,11 +75,49 @@ class BasicHTTPAgent(HTTPAgent):
         self._authication = 'Basic '+base64.b64encode(username+':'+password)
 
 
-    def _prepareHeaders(self, headers):
+    def _prepareHeaders(self, method, uri, headers, body):
         twHeaders = HTTPAgent._prepareHeaders(self, headers)
         if twHeaders is None:
             twHeaders = Headers()
         twHeaders.addRawHeader('Authorization',  self._authication)
+        return twHeaders
+
+
+class OAuthHTTPAgent(HTTPAgent):
+
+    def __init__(self, consumer, token, oauthSigMethod=oauth.SignatureMethod_HMAC_SHA1()):
+        HTTPAgent.__init__(self)
+        self._oauthSigMethod = oauthSigMethod
+        self._consumer = consumer
+        self._token = token
+        self._oauth_request = None
+
+
+    def _prepareBody(self, method, uri, headers, body):
+        twBody = None
+        if isinstance(body, dict):
+            self._oauth_request = oauth.Request.from_consumer_and_token(self._consumer, token=self._token, http_method=method, http_url=uri, parameters=body)
+            self._oauth_request.sign_request(self._oauthSigMethod, self._consumer, self._token);
+            twBody = FileBodyProducer(StringIO(self._oauth_request.to_postdata()))
+        else:
+            twBody = HTTPAgent._prepareBody(self, method, uri, headers, body)
+        return twBody
+
+
+    def _prepareHeaders(self, method, uri, headers, body):
+        twHeaders = None
+        if self._oauth_request is not None:
+            self._urlencoded = True
+            twHeaders = HTTPAgent._prepareHeaders(self, method, uri, headers, body)
+            if twHeaders is None:
+                twHeaders = Headers()
+            for k, v in self._oauth_request.to_header().items():
+                # The Twisted HTTP Agent has a problem with Unicode header keys and values,
+                # which the OAuth2 library generates, so convert the header keys and values
+                # to a regular strings from Unicode. (Possible corruption of the headers?)
+                twHeaders.addRawHeader(str(k), str(v))
+        else:
+            twHeaders = HTTPAgent._prepareHeaders(self, method, uri, headers, body)
         return twHeaders
 
 
@@ -96,7 +133,7 @@ class _HTTPAgentRequester():
 
 
     def _callback(self, response):
-        log.msg("_HTTPAgentRequester: _callback: Response received", logLevel=_TRACE)
+        log.msg("_HTTPAgentRequester: _callback: Response Received", logLevel=_TRACE)
         response.deliverBody(_HTTPAgentResponseProtocol(self._deferred, _HTTPAgentResponse(response)))
     
 
@@ -117,9 +154,14 @@ class _HTTPAgentResponse:
             self.headers[k] = v
 
     def __str__(self):
-        buf = StringIO("{")
+        buf = StringIO()
+        buf.write("Response(")
         buf.write(" Version:")
-        buf.write(str(self.version))
+        buf.write(str(self.version[0]))
+        buf.write("/")
+        buf.write(str(self.version[1]))
+        buf.write(".")
+        buf.write(str(self.version[2]))
         buf.write(" Code:")
         buf.write(str(self.code))
         buf.write(" (")
@@ -127,7 +169,7 @@ class _HTTPAgentResponse:
         buf.write(")")
         buf.write(" Headers:")
         buf.write(str(self.headers))
-        buf.write(" }")
+        buf.write(" )")
         return buf.getvalue()
 
     def isInformational(self):

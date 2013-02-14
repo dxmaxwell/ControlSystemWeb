@@ -3,13 +3,15 @@
 Initialize Twitter notifier.
 '''
 
-# from oauth import oauth
+# import oauth2 as oauth
+# from csweb.util.http import OAuthHTTPAgent
+# from csweb.util.twitter import TwitterAgent
 # from csweb.notify.twitter import TwitterNotifier
 
-# token = oauth.OAuthToken("TokenKey", "TokenSecret")
-# consumer = oauth.OAuthConsumer("ConsumerKey", "ConsumerSecret")
-
-# twitterNotifier = TwitterNotifier(consumer, token)
+# twitterNotifier = TwitterNotifier()
 # log.msg('twitternotifier.py: TwitterNotifier: %(d)s', d=twitterNotifier, logLevel=_INFO)
 
-# twitterNotifier.register("epics:SR2026X:Status")
+# token = oauth.Token("TokenKey", "TokenSecret")
+# consumer = oauth.Consumer("ConsumerKey", "ConsumerSecret")
+# twitterNotifier.addAgent("AgentName", TwitterAgent(OAuthHTTPAgent(consumer, token)))
+# twitterNotifier.register("epics:SR2026X:Status", "AgentName")

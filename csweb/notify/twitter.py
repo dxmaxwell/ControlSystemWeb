@@ -6,8 +6,9 @@ Send twitter notifications on events.
 from .. import device
 
 from ..util import log
+from ..util.twitter import TwitterAgent
 
-from ..util.twitter import Twitter
+from .notifier import Notifier
 
 from twisted.internet import protocol
 from twisted.internet import reactor
@@ -19,26 +20,28 @@ _DEBUG = log.DEBUG
 _WARN = log.WARN
 
 
-class TwitterNotifier:
+class TwitterNotifier(Notifier):
 
-    def __init__(self, consumer, token):
-        self._subscriptions = {}
-        self._twitter = Twitter(consumer=consumer, token=token)
+    def __init__(self, twitterAgents={}):
+        Notifier.__init__(self)
+        self._agents = {}
+        if isinstance(twitterAgents, dict):
+            for n, a in twitterAgents.items():
+                self.addAgent(n, a)
 
 
-    def register(self, url):
-        if url not in self._subscriptions:
-            log.msg("TwitterNotifier: register: No subsciption for URL %(r)s", r=url, logLevel=_DEBUG)
-            protocolFactory = TwitterNotifierSubscriptionProtocolFactory(url, self)
-            deferred = device.subscribe(url, protocolFactory)
-            subscription = _TwitterNotifierSubscription(deferred)
-            log.msg("TwitterNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_DEBUG)
-            self._subscriptions[url] = subscription
+    def addAgent(self, name, agent):
+        if isinstance(agent, TwitterAgent):
+            if name not in self._agents:
+                log.msg("TwitterNotifier: notify: addAgent: New Agent: %(n)s", n=name, logLevel=_TRACE)
+            else:
+                log.msg("TwitterNotifier: notify: addAgent: Replace Agent: %(n)s", n=name, logLevel=_DEBUG)
+            self._agents[name] = agent
         else:
-            log.msg("TwitterNotifier: register: Subsciption found for URL %(r)s", r=url, logLevel=_DEBUG)
+            log.msg("TwitterNotifier: notify: addAgent: Agent is Unexpected Class: %(n)s", n=name, logLevel=_WARN)
 
 
-    def notify(self, url, data):
+    def notify(self, url, data, destinations):
 
         msg = self._toHashTag(data['pvname']) + " "
         if 'char_value' in data:
@@ -49,66 +52,16 @@ class TwitterNotifier:
             msg += "(UNKNOWN)"
 
         log.msg("TwitterNotifier: notify: Message: %(m)s", m=msg, logLevel=_DEBUG)
-        twitterDeferred = self._twitter.update(msg)
-        twitterDeferred.addCallback(self._notify_callback)
-        twitterDeferred.addErrback(self._notify_errback)
 
-
-    def _notify_callback(self, result):
-        log.msg("TwitterNotifier: _notify_callback: Status update successful %(r)s", r=result, logLevel=_TRACE)
-
-
-    def _notify_errback(self, err):
-        log.msg("TwitterNotifier: _notify_errback: Error while updating status: %(e)s", e=err, logLevel=_WARN)
+        for dest in destinations:
+            if dest in self._agents:
+                log.msg("TwitterNotifier: notify: Destination Found: %(d)s", d=dest, logLevel=_DEBUG)
+                d = self._agents[dest].update(msg)
+                d.addCallback(self._notifyCallback)
+                d.addErrback(self._notifyErrback)
+            else:
+                log.msg("TwitterNotifier: notify: Destination NOT Found: %(d)s", d=dest, logLevel=_WARN)
 
 
     def _toHashTag(self, s):
-    	return '#' + s.replace(':', '')
-
-class _TwitterNotifierSubscription:
-
-    def __init__(self, deferred):
-        self._protocol = None
-        self._deferred = deferred
-        self._deferred.addCallback(self._subscribeCallback)
-        self._deferred.addErrback(self._subscribeErrback)
-
-
-    def _subscribeCallback(self, protocol):
-        log.msg("_TwitterNotifierSubscription: _subscribeCallback: Protocol %(p)s", p=protocol, logLevel=_DEBUG)
-        self._protocol = protocol
-    
- 	
-    def _subscribeErrback(self, failure):
-        log.msg("_TwitterNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_WARN)
-
-
-
-class TwitterNotifierSubscriptionProtocol(protocol.Protocol):
-    '''
-    Protocol
-    '''
-
-    def __init__(self, url, notifier):
-        self._url = url
-        self._notifier = notifier
-    
-
-    def dataReceived(self, data):
-        log.msg("TwitterNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
-        self._notifier.notify(self._url, data)
-        
-
-
-class TwitterNotifierSubscriptionProtocolFactory(protocol.Factory):
-    '''
-    Protocol Factory
-    '''
-
-    def __init__(self, url, notifier):
-        self._url = url
-        self._notifier = notifier
-
-
-    def buildProtocol(self, addr):
-        return TwitterNotifierSubscriptionProtocol(self._url, self._notifier)
+        return '#' + s.replace(':', '')
