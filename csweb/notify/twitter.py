@@ -3,6 +3,8 @@
 Send twitter notifications on events.
 '''
 
+import re, datetime
+
 from .. import device
 
 from ..util import log
@@ -22,8 +24,10 @@ _WARN = log.WARN
 
 class TwitterNotifier(Notifier):
 
-    def __init__(self, twitterAgents={}):
+    def __init__(self, twitterAgents={}, prefix="", postfix=""):
         Notifier.__init__(self)
+        self._prefix = prefix
+        self._postfix = postfix
         self._agents = {}
         if isinstance(twitterAgents, dict):
             for n, a in twitterAgents.items():
@@ -43,14 +47,52 @@ class TwitterNotifier(Notifier):
 
     def notify(self, url, data, destinations):
 
-        msg = self._toHashTag(data['pvname']) + " "
-        if 'char_value' in data:
-            msg += data['char_value'] 
-        elif 'value' in data:
-            msg += str(data['value'])
-        else:
-            msg += "(UNKNOWN)"
+        if "char_value" in data:
+            print data["char_value"]
+        if "value" in data:
+            print data["value"]
 
+        if "name" in data:
+            msg = self._toHashTag(data["name"])            
+        elif "pvname" in data:
+            msg = self._toHashTag(data["pvname"])
+        else:
+            msg = "UnknownDevice"
+
+        if "char_value" in data:
+            msg += " " + data['char_value']
+            if "units" in data:
+                msg += data["units"]
+        elif "value" in data:
+            msg += " " + str(data["value"])
+            if "units" in data:
+                msg += data["units"]
+        else:
+            msg += " N/A"
+
+        if "timestamp" in data:
+            time = datetime.datetime.fromtimestamp(data["timestamp"])
+        else:
+            time = datetime.datetime.today()
+
+        prefix = time.strftime(self._prefix)
+        postfix = time.strftime(self._postfix)
+        
+        length = 160 - len(prefix) - len(postfix)
+        if length <= 0:
+            log.msg("TwitterNotifier: notify: Prefix and Postfix length >160, will truncate", logLevel=_WARN)
+            if len(prefix) > 40:
+                prefix = prefix[:37] + "..."
+            if len(postfix) > 40:
+                postfix = postfix[:37] + "..."
+            length = 160 - len(prefix) - len(postfix)
+
+        if length < len(msg):
+            log.msg("TwitterNotifier: notify: Message length >160 characters, will truncate", logLevel=_DEBUG)
+            msg = msg[:(length-3)] + "..."
+
+        msg = prefix + msg + postfix
+        
         log.msg("TwitterNotifier: notify: Message: %(m)s", m=msg, logLevel=_DEBUG)
 
         for dest in destinations:
@@ -64,4 +106,4 @@ class TwitterNotifier(Notifier):
 
 
     def _toHashTag(self, s):
-        return '#' + s.replace(':','').replace('-','')
+        return '#' + re.sub(r"[^a-zA-Z0-9]", "", s)
