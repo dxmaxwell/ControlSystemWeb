@@ -55,6 +55,7 @@ class _EpicsHighEdgeSubscriptionProtocol(EpicsSubscriptionProtocol):
             log.msg("_EpicsHighEdgeSubscriptionProtocol: dataReceived: New value >= %(v)f", v=self._value, logLevel=_TRACE)
             if self._data == False:
                 log.msg("_EpicsHighEdgeSubscriptionProtocol: dataReceived: High edge transition reached.", logLevel=_TRACE)
+                data["char_value"] = ">" + str(self._value)
                 EpicsSubscriptionProtocol.dataReceived(self, data)
         else:
             log.msg("_EpicsHighEdgeSubscriptionProtocol: dataReceived: New value < %(v)f", v=self._value, logLevel=_TRACE)
@@ -100,6 +101,7 @@ class _EpicsLowEdgeSubscriptionProtocol(EpicsSubscriptionProtocol):
             log.msg("_EpicsLowEdgeSubscriptionProtocol: dataReceived: New value <= %(v)f", v=self._value, logLevel=_TRACE)
             if self._data == False:
                 log.msg("_EpicsLowEdgeSubscriptionProtocol: dataReceived: Low edge transition reached.", logLevel=_TRACE)
+                data["char_value"] = "<" + str(self._value)
                 EpicsSubscriptionProtocol.dataReceived(self, data)
         else:
             log.msg("_EpicsLowEdgeSubscriptionProtocol: dataReceived: New value > %(v)f", v=self._value, logLevel=_TRACE)
@@ -148,5 +150,9 @@ class _EpicsThresholdSubscriptionProtocol(EpicsSubscriptionProtocol):
             log.msg("_EpicsThresholdSubscriptionProtocol: dataReceived: New value > %(v)f", v=self._value, logLevel=_TRACE)
         if self._data != result:
                 log.msg("_EpicsThresholdSubscriptionProtocol: dataReceived: Threshold reached.", logLevel=_TRACE)
+                if result == True:
+                    data["char_value"] = "<" + str(self._value)
+                else:
+                    data["char_value"] = ">" + str(self._value)
                 EpicsSubscriptionProtocol.dataReceived(self, data)
         self._data = result
