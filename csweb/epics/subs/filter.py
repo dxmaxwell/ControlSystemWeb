@@ -15,28 +15,6 @@ _DEBUG = log.DEBUG
 _WARN = log.WARN
 
 
-class _EpicsFilterSubscriptionProtocol(EpicsSubscriptionProtocol):
-
-    NaN = float('nan')
-
-    def __init__(self, address, value, subscription):
-        EpicsSubscriptionProtocol.__init__(self, address, subscription)
-        self._value = value
-
-
-    def _value_from_data_recieved(self, data):
-        if 'value' not in data:
-            log.msg('_EpicsFilterSubscriptionProtocol: _value_from_data_recieved: Data does not contain "value".', logLevel=_WARN)
-            return self.NaN
-        
-        try:
-            value = float(data['value'])
-        except ValueError as error:
-            log.msg('_EpicsFilterSubscriptionProtocol: _value_from_data_recieved: Value error: %(e)s', e=error, logLevel=_WARN)
-            return self.NaN
-
-        return value
-
 
 class EpicsHighEdgeSubscription(EpicsSubscription):
     
@@ -59,16 +37,17 @@ class _EpicsHighEdgeSubscriptionProtocolFactory(EpicsSubscriptionProtocolFactory
         return EpicsSubscriptionProtocolFactory.buildProtocol(self, addr)
 
 
-class _EpicsHighEdgeSubscriptionProtocol(_EpicsFilterSubscriptionProtocol):
+class _EpicsHighEdgeSubscriptionProtocol(EpicsSubscriptionProtocol):
 
     def __init__(self, address, value, subscription):
-        _EpicsFilterSubscriptionProtocol.__init__(self, address, value, subscription)
+        EpicsSubscriptionProtocol.__init__(self, address, subscription)
+        self._value = value
         self._data = False
     
 
     def dataReceived(self, data):
-        value = self._value_from_data_recieved(data)
-        if math.isnan(value):
+        value = self.float_value_from_data(data)
+        if value is None:
             return
 
         result = (value >= self._value)
@@ -103,16 +82,17 @@ class _EpicsLowEdgeSubscriptionProtocolFactory(EpicsSubscriptionProtocolFactory)
         return EpicsSubscriptionProtocolFactory.buildProtocol(self, addr)
 
 
-class _EpicsLowEdgeSubscriptionProtocol(_EpicsFilterSubscriptionProtocol):
+class _EpicsLowEdgeSubscriptionProtocol(EpicsSubscriptionProtocol):
 
     def __init__(self, address, value, subscription):
-        _EpicsFilterSubscriptionProtocol.__init__(self, address, value, subscription)
+        EpicsSubscriptionProtocol.__init__(self, address, subscription)
+        self._value = value
         self._data = False
     
 
     def dataReceived(self, data):
-        value = self._value_from_data_recieved(data)
-        if math.isnan(value):
+        value = self.float_value_from_data(data)
+        if value is None:
             return
 
         result = (value <= self._value)    
@@ -149,22 +129,19 @@ class _EpicsThresholdSubscriptionProtocolFactory(EpicsSubscriptionProtocolFactor
         return EpicsSubscriptionProtocolFactory.buildProtocol(self, addr)
 
 
-class _EpicsThresholdSubscriptionProtocol(_EpicsFilterSubscriptionProtocol):
+class _EpicsThresholdSubscriptionProtocol(EpicsSubscriptionProtocol):
 
     def __init__(self, address, value, subscription):
-        _EpicsFilterSubscriptionProtocol.__init__(self, address, value, subscription)
+        EpicsSubscriptionProtocol.__init__(self, address, subscription)
+        self._value = value
 
 
     def dataReceived(self, data):
-        value = self._value_from_data_recieved(data)
-        if math.isnan(value):
+        value = self.float_value_from_data(data)
+        if value is None:
             return
 
         result = (value <= self._value)
-        if self._data != result:
-            EpicsSubscriptionProtocol.dataReceived(self, data)
-        self._data = result
-
         if result == True:
             log.msg("_EpicsThresholdSubscriptionProtocol: dataReceived: New value <= %(v)f", v=self._value, logLevel=_TRACE)
         else:

@@ -148,6 +148,18 @@ class EpicsSubscriptionProtocol(DistributingProtocol):
             protocol.makeConnection(EpicsSubscriptionTransport(transport, protocol, self))
 
 
+    def float_value_from_data(self, data):
+        if 'value' not in data:
+            log.msg('_EpicsFilterSubscriptionProtocol: _value_from_data_recieved: Data does not contain "value".', logLevel=_WARN)
+            return None
+        
+        try:
+            return float(data['value'])
+        except ValueError as error:
+            log.msg('_EpicsFilterSubscriptionProtocol: _value_from_data_recieved: Value error: %(e)s', e=error, logLevel=_WARN)
+            return None
+
+
 class EpicsSubscriptionTransport(DistributingTransport):
     
     def __init__(self, transport, protocol, epicsProtocol):
