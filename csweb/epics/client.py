@@ -182,6 +182,12 @@ class _ProcessVariableConnector:
         # Transformation/Sanitization of the data
         # parameters can be done here if required.
 
+        # Add the 'name' standard parameter.
+        if "pvname" in self._data:
+            self._data["name"] = self._data["pvname"]
+        else:
+            self._data["name"] = self._pvname
+
         # Delete 'cb_info' because it contains
         # values that cannot be serialized to JSON.
         if 'cb_info' in self._data:
