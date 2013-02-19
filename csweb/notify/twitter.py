@@ -47,11 +47,6 @@ class TwitterNotifier(Notifier):
 
     def notify(self, url, data, destinations):
 
-        if "char_value" in data:
-            print data["char_value"]
-        if "value" in data:
-            print data["value"]
-
         if "name" in data:
             msg = self._toHashTag(data["name"])            
         elif "pvname" in data:
