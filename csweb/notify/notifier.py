@@ -41,11 +41,11 @@ class Notifier:
 
 
     def _notifyCallback(self, result):
-        log.msg("Notifier: _notifyCallback: Sending notification successful %(r)s", r=result, logLevel=_TRACE)
+        log.msg("Notifier: _notifyCallback: Sending notification successful: %(r)s", r=result, logLevel=_TRACE)
 
 
     def _notifyErrback(self, failure):
-        log.msg("Notifier: _notifyErrback: Error while sending notification: %(f)s", f=failure.value, logLevel=_WARN)
+        log.msg("Notifier: _notifyErrback: Error while sending notification: %(f)s", f=failure, logLevel=_WARN)
 
 
 
