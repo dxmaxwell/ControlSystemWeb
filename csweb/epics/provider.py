@@ -3,7 +3,7 @@
 DeviceProvider interface for EPICS PVs.
 
 Supported URL:
-    epics:ProcessVariable[?[buffer=<size>][&[rate=<interval>]|[ratelimit=<interval>][&lowedge=<value>][&highedge=<value>][&threshold=<value>]]]
+    epics:ProcessVariable[?[buffer=<size>][&[rate=<interval>]|[ratelimit=<interval>][&lowedge=<value>][&highedge=<value>][&threshold=<value>][&name=<value>][&units=<value>][&precision=<value>]]]
 
 Supported Parameters:
     buffer=<size>
@@ -12,6 +12,9 @@ Supported Parameters:
     lowedge=<value>
     highedge=<value>
     threshold=<value>
+    name=<value>
+    units=<value>
+    precision=<value>
 '''
 
 
@@ -27,6 +30,8 @@ from .subs.rate import EpicsRateLimitSubscription
 from .subs.filter import EpicsLowEdgeSubscription
 from .subs.filter import EpicsHighEdgeSubscription
 from .subs.filter import EpicsThresholdSubscription
+from .subs.set import EpicsSetSubscription
+from .subs.set import EpicsSetPrecisionSubscription
 
 from ..util.url import URL
 from ..util import log, dist
@@ -48,6 +53,9 @@ _EPICS_PARAM_RATE_LIMIT = 'ratelimit'
 _EPICS_PARAM_LOWEDGE = 'lowedge'
 _EPICS_PARAM_HIGHEDGE = 'highedge'
 _EPICS_PARAM_THRESHOLD = 'threshold'
+_EPICS_PARAM_NAME = 'name'
+_EPICS_PARAM_UNITS = 'units'
+_EPICS_PARAM_PRECISION = 'precision'
 
 
 
@@ -137,6 +145,36 @@ class EpicsDeviceProvider(DeviceProvider):
                 subscription = EpicsRateLimitSubscription(subscription, interval, str(url), self._subscriptions)
                 log.msg("EpicsDeviceProvider: subscribe: EpicsRateLimitSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
+        if _EPICS_PARAM_NAME in query:
+            url.query[_EPICS_PARAM_NAME] = query[_EPICS_PARAM_NAME]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetSubscription ('name') found for '%(u)s'", u=url, logLevel=_DEBUG)
+            else:
+                name = query[_EPICS_PARAM_NAME]
+                subscription = EpicsSetSubscription(subscription, "name", name, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetSubscription ('name') not found for '%(u)s'", u=url, logLevel=_DEBUG)
+
+        if _EPICS_PARAM_UNITS in query:
+            url.query[_EPICS_PARAM_UNITS] = query[_EPICS_PARAM_UNITS]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetSubscription ('units') found for '%(u)s'", u=url, logLevel=_DEBUG)
+            else:
+                units = query[_EPICS_PARAM_UNITS]
+                subscription = EpicsSetSubscription(subscription, "units", units, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetSubscription ('units') not found for '%(u)s'", u=url, logLevel=_DEBUG)
+
+        if _EPICS_PARAM_PRECISION in query:
+            url.query[_EPICS_PARAM_PRECISION] = query[_EPICS_PARAM_PRECISION]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetPrecisionSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
+            else:
+                precision = query[_EPICS_PARAM_PRECISION]
+                subscription = EpicsSetPrecisionSubscription(subscription, precision, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsSetPrecisionSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
+
         if _EPICS_PARAM_BUFFER in query:
             url.query[_EPICS_PARAM_BUFFER] = query[_EPICS_PARAM_BUFFER]
             if str(url) in self._subscriptions:
@@ -166,7 +204,7 @@ class EpicsDeviceProvider(DeviceProvider):
         url.merge_params()
         url.params.set_sort_keys()
         url.params.set_lower_keys()
-        url.params.retain((_EPICS_PARAM_LOWEDGE,_EPICS_PARAM_HIGHEDGE,_EPICS_PARAM_THRESHOLD,_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_BUFFER))
+        url.params.retain((_EPICS_PARAM_LOWEDGE,_EPICS_PARAM_HIGHEDGE,_EPICS_PARAM_THRESHOLD,_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_NAME,_EPICS_PARAM_UNITS,_EPICS_PARAM_PRECISION,_EPICS_PARAM_BUFFER))
 
         if _EPICS_PARAM_RATE in url.query and _EPICS_PARAM_RATE_LIMIT in url.query:
             raise NotSupportedError("Parameters '%s' and '%s' are mutually exclusive" % (_EPICS_PARAM_RATE,_EPICS_PARAM_RATE_LIMIT))
@@ -204,6 +242,26 @@ class EpicsDeviceProvider(DeviceProvider):
                 raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
             if url.query[_EPICS_PARAM_RATE_LIMIT] <= 0.0:
                 raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
+
+        if _EPICS_PARAM_NAME in url.query:
+            try:
+                url.query[_EPICS_PARAM_NAME] = str(url.query[_EPICS_PARAM_NAME])
+            except:
+                raise NotSupportedError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_NAME,url.query[_EPICS_PARAM_NAME]))
+
+        if _EPICS_PARAM_UNITS in url.query:
+            try:
+                url.query[_EPICS_PARAM_UNITS] = str(url.query[_EPICS_PARAM_UNITS])
+            except:
+                raise NotSupportedError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_UNITS,url.query[_EPICS_PARAM_UNITS]))
+
+        if _EPICS_PARAM_PRECISION in url.query:
+            try:
+                url.query[_EPICS_PARAM_PRECISION] = int(url.query[_EPICS_PARAM_PRECISION])
+            except:
+                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
+            if url.query[_EPICS_PARAM_PRECISION] < 0:
+                raise NotSupportedError("Parameter (%s) value < 0 (%d)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
 
         if _EPICS_PARAM_BUFFER in url.query:
             try:

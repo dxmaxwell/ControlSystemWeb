@@ -176,6 +176,45 @@ var cswui = {};
 			this.uri.query[opt] = val;
 		}
 
+		if( 'name' in this.options ) {
+
+			opt = 'name';
+			val = String(this.options[opt]);
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'units' in this.options ) {
+
+			opt = 'units';
+			val = String(this.options[opt]);
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'precision' in this.options ) {
+
+			opt = 'precision';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "precision" option must have a numeric value.'));
+				return true;
+			}
+
+			if( val <= 0 ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "precision" option must have value > 0.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
 		if( 'buffer' in this.options ) {
 
 			opt = 'buffer';
@@ -307,18 +346,23 @@ var cswui = {};
 		cswui.AbstractField.prototype._socketOnData.call(this, event);
 		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
 			var data = event.data;
-			if( (data.precision !== undefined) && (typeof data.precision === 'number') ) {
-				data.value *= Math.pow(10,data.precision);
-				data.value  = Math.round(data.value);
-				data.value /= Math.pow(10,data.precision);
+			var elm = $(this.elm).find('.csw-value').get(0);
+			if( elm ) {
+				if( (data.char_value !== undefined) && (typeof data.char_value === 'string') && (data.char_value !== "") ) {
+					$(elm).html(data.char_value);
+				} else if( (data.value !== undefined) && (typeof data.value === 'number') ) {
+					if( (data.precision !== undefined) && (typeof data.precision === 'number') && (data.precision > 0) ) {
+						$(elm).html(data.value.toPrecision(data.precision));
+					} else {
+						$(elm).html(data.value.toString());
+					}
+				} else {
+					$(elm).html("<VALUE>");
+				}
 			}
-
-			var e = $(this.elm).find('.csw-value').get(0);
-			$(e).html(data.value);
-
-			if( (data.units !== undefined) && (typeof data.units === 'string') ) {
-				var e = $(this.elm).find('.csw-units').get(0);
-				$(e).html(data.units);
+			elm = $(this.elm).find('.csw-units').get(0);
+			if( (elm) && (data.units !== undefined) && (typeof data.units === 'string') && (data.units !== "") ) {
+				$(elm).html(data.units);
 			}
 		}
 	};
@@ -361,6 +405,7 @@ var cswui = {};
 
 	StripChartField.prototype._socketOnData = function(event) {
 		cswui.AbstractField.prototype._socketOnData.call(this, event);
+		var dyoptions = { yAxisLabelWidth:75, xAxisLabelWidth:75 };
 		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
 			var data = event.data;			
 			if( data.length !== undefined ) {
@@ -376,11 +421,22 @@ var cswui = {};
 					this.chartdata.shift();
 				}
 			}
-			this.dygraph.updateOptions({file:this.chartdata});
-
-			if(data.units) {
-				this.dygraph.updateOptions({ylabel:this.options.device + ' [' + data.units + ']','yAxisLabelWidth':75, xAxisLabelWidth:75});
+			dyoptions.file = this.chartdata;
+			
+			var ylabel = this.options.device;
+			if( data.length !== undefined ) {
+				// Select the last element.
+				data = data[data.length-1];
 			}
+			if( (data.name !== undefined) && (typeof data.name === "string") && (data.name !== "") ) {
+				ylabel = data.name
+			}
+			if( (data.units !== undefined) && (typeof data.units === "string") && (data.units !== "") ) {
+				ylabel += " [" + data.units + "]";	
+			}
+			dyoptions.ylabel = ylabel;
+			
+			this.dygraph.updateOptions(dyoptions);
 		}
 	};
 	
