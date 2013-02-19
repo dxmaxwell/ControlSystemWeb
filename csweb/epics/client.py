@@ -65,6 +65,7 @@ class _ProcessVariableConnector:
         self._protocolFactory = protocolFactory
         self._protocol = None
         self._connected = False
+        self._units = None
         self._data = None
         self._pv = None
 
@@ -178,6 +179,13 @@ class _ProcessVariableConnector:
             self._data = {}
 
         self._data.update(kwargs)
+
+        # The true 'units' string only appears in the first callback, after
+        # that it is just an empty string. Must be a bug in PyEpics3 v3.2.0!
+        if ("units" in self._data) and (self._data["units"] != ""):
+            self._units = self._data["units"]
+        elif self._units is not None:
+            self._data["units"] = self._units
 
         # Transformation/Sanitization of the data
         # parameters can be done here if required.
