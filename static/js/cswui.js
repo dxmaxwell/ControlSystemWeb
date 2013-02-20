@@ -411,6 +411,7 @@ var cswui = {};
 
 		this.dygraph = null;
 		this.chartdata = [];
+		this.chartoptions = { yAxisLabelWidth:75, xAxisLabelWidth:75, labels:["X","Y"] };
 		this.superclass(elm, StripChartField.template);
 	};
 
@@ -430,12 +431,11 @@ var cswui = {};
 	StripChartField.prototype._prepareElement = function(tmpl) {
 		cswui.AbstractField.prototype._prepareElement.call(this, tmpl);
 		var e = $(this.elm).find('.csw-dygraph').get(0);
-		this.dygraph = new Dygraph(e);
+		this.dygraph = new Dygraph(e, [[0,0]], this.chartoptions);
 	};
 
 	StripChartField.prototype._socketOnData = function(event) {
 		cswui.AbstractField.prototype._socketOnData.call(this, event);
-		var dyoptions = { yAxisLabelWidth:75, xAxisLabelWidth:75 };
 		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
 			var data = event.data;			
 			if( data.length !== undefined ) {
@@ -451,7 +451,7 @@ var cswui = {};
 					this.chartdata.shift();
 				}
 			}
-			dyoptions.file = this.chartdata;
+			this.chartoptions.file = this.chartdata;
 			
 			var ylabel = this.options.device;
 			if( data.length !== undefined ) {
@@ -464,9 +464,9 @@ var cswui = {};
 			if( (data.units !== undefined) && (typeof data.units === "string") && (data.units !== "") ) {
 				ylabel += " [" + data.units + "]";	
 			}
-			dyoptions.ylabel = ylabel;
+			this.chartoptions.ylabel = ylabel;
 			
-			this.dygraph.updateOptions(dyoptions);
+			this.dygraph.updateOptions(this.chartoptions);
 		}
 	};
 	
