@@ -48,6 +48,7 @@ class _EpicsSetSubscriptionProtocol(EpicsSubscriptionProtocol):
 
     def dataReceived(self, data):
         log.msg("_EpicsSetSubscriptionProtocol: dataReceived: Set Key:'%(k)s' to Value:'%(v)s'", k=self._key, v=self._value, logLevel=_TRACE)
+        data = dict(data) # Important to copy the dictionary before modification.
         data[self._key] = self._value
         EpicsSubscriptionProtocol.dataReceived(self, data)
 
@@ -85,8 +86,9 @@ class _EpicsSetPrecisionSubscriptionProtocol(EpicsSubscriptionProtocol):
         value = self.float_value_from_data(data)
         if value is not None:
             log.msg("_EpicsSetPrecisionSubscriptionProtocol: dataReceived: Set Precision: %(p)s", p=self._precision, logLevel=_TRACE)
+            data = dict(data) # Important to copy the dictionary before modification.
             data["precision"] = self._precision
-            data["char_value"] = str(round(value, self._precision))
+            self.refresh_char_value_from_data(data, value)
         else:
             log.msg("_EpicsSetPrecisionSubscriptionProtocol: dataReceived: Set Precision: Value is None", logLevel=_WARN)
         EpicsSubscriptionProtocol.dataReceived(self, data)
