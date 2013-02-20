@@ -23,6 +23,7 @@ class EpicsSubscription:
     def __init__(self, subkey, subscriptions):
         self._subkey = subkey
         self._subscriptions = subscriptions
+        print '**** ' + self._subkey 
         self._subscriptions[self._subkey] = self
         self._protocolFactory = None # override in superclass
 
@@ -158,6 +159,18 @@ class EpicsSubscriptionProtocol(DistributingProtocol):
         except ValueError as error:
             log.msg('_EpicsFilterSubscriptionProtocol: _value_from_data_recieved: Value error: %(e)s', e=error, logLevel=_WARN)
             return None
+
+
+    def refresh_char_value_from_data(self, data, value=None):
+        if value is None:
+            value = self.float_value_from_data(data)
+            if value is None:
+                return
+
+        try:
+            data["char_value"] = str(round(value, abs(int(data["precision"]))))
+        except:
+            data["char_value"] = str(value)
 
 
 class EpicsSubscriptionTransport(DistributingTransport):

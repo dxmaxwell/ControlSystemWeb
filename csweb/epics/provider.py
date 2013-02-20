@@ -3,7 +3,7 @@
 DeviceProvider interface for EPICS PVs.
 
 Supported URL:
-    epics:ProcessVariable[?[buffer=<size>][&[rate=<interval>]|[ratelimit=<interval>][&lowedge=<value>][&highedge=<value>][&threshold=<value>][&name=<value>][&units=<value>][&precision=<value>]]]
+    epics:ProcessVariable[?[buffer=<size>][&[rate=<interval>]|[ratelimit=<interval>][&lowedge=<value>][&highedge=<value>][&threshold=<value>][&name=<value>][&units=<value>][&precision=<value>][&scale=<value>][&offset=<value>]]]
 
 Supported Parameters:
     buffer=<size>
@@ -15,6 +15,8 @@ Supported Parameters:
     name=<value>
     units=<value>
     precision=<value>
+    scale=<value>
+    offset=<value>
 '''
 
 
@@ -32,6 +34,8 @@ from .subs.filter import EpicsHighEdgeSubscription
 from .subs.filter import EpicsThresholdSubscription
 from .subs.set import EpicsSetSubscription
 from .subs.set import EpicsSetPrecisionSubscription
+from .subs.scale import EpicsScaleSubscription
+from .subs.scale import EpicsOffsetSubscription
 
 from ..util.url import URL
 from ..util import log, dist
@@ -56,6 +60,8 @@ _EPICS_PARAM_THRESHOLD = 'threshold'
 _EPICS_PARAM_NAME = 'name'
 _EPICS_PARAM_UNITS = 'units'
 _EPICS_PARAM_PRECISION = 'precision'
+_EPICS_PARAM_SCALE = 'scale'
+_EPICS_PARAM_OFFSET = 'offset'
 
 
 
@@ -104,6 +110,26 @@ class EpicsDeviceProvider(DeviceProvider):
                 interval = query[_EPICS_PARAM_RATE]
                 subscription = EpicsRateSubscription(subscription, interval, str(url), self._subscriptions)
                 log.msg("EpicsDeviceProvider: subscribe: EpicsRateSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
+
+        if _EPICS_PARAM_SCALE in query:
+            url.query[_EPICS_PARAM_SCALE] = query[_EPICS_PARAM_SCALE]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsScaleSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
+            else:
+                value = query[_EPICS_PARAM_SCALE]
+                subscription = EpicsScaleSubscription(subscription, value, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsScaleSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
+
+        if _EPICS_PARAM_OFFSET in query:
+            url.query[_EPICS_PARAM_OFFSET] = query[_EPICS_PARAM_OFFSET]
+            if str(url) in self._subscriptions:
+                subscription = self._subscriptions[str(url)]
+                log.msg("EpicsDeviceProvider: subscribe: EpicsOffsetSubscription found for '%(u)s'", u=url, logLevel=_DEBUG)
+            else:
+                value = query[_EPICS_PARAM_OFFSET]
+                subscription = EpicsOffsetSubscription(subscription, value, str(url), self._subscriptions)
+                log.msg("EpicsDeviceProvider: subscribe: EpicsOffsetSubscription not found for '%(u)s'", u=url, logLevel=_DEBUG)
 
         if _EPICS_PARAM_LOWEDGE in query:
             url.query[_EPICS_PARAM_LOWEDGE] = query[_EPICS_PARAM_LOWEDGE]
@@ -204,7 +230,7 @@ class EpicsDeviceProvider(DeviceProvider):
         url.merge_params()
         url.params.set_sort_keys()
         url.params.set_lower_keys()
-        url.params.retain((_EPICS_PARAM_LOWEDGE,_EPICS_PARAM_HIGHEDGE,_EPICS_PARAM_THRESHOLD,_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_NAME,_EPICS_PARAM_UNITS,_EPICS_PARAM_PRECISION,_EPICS_PARAM_BUFFER))
+        url.params.retain((_EPICS_PARAM_SCALE,_EPICS_PARAM_OFFSET,_EPICS_PARAM_LOWEDGE,_EPICS_PARAM_HIGHEDGE,_EPICS_PARAM_THRESHOLD,_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_NAME,_EPICS_PARAM_UNITS,_EPICS_PARAM_PRECISION,_EPICS_PARAM_BUFFER))
 
         if _EPICS_PARAM_RATE in url.query and _EPICS_PARAM_RATE_LIMIT in url.query:
             raise NotSupportedError("Parameters '%s' and '%s' are mutually exclusive" % (_EPICS_PARAM_RATE,_EPICS_PARAM_RATE_LIMIT))
@@ -216,6 +242,18 @@ class EpicsDeviceProvider(DeviceProvider):
                 raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
             if url.query[_EPICS_PARAM_RATE] <= 0.0:
                 raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+
+        if _EPICS_PARAM_SCALE in url.query:
+            try:
+                url.query[_EPICS_PARAM_SCALE] = float(url.query[_EPICS_PARAM_SCALE])
+            except:
+                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_SCALE,url.query[_EPICS_PARAM_SCALE]))
+
+        if _EPICS_PARAM_OFFSET in url.query:
+            try:
+                url.query[_EPICS_PARAM_OFFSET] = float(url.query[_EPICS_PARAM_OFFSET])
+            except:
+                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_OFFSET,url.query[_EPICS_PARAM_OFFSET]))
 
         if _EPICS_PARAM_LOWEDGE in url.query:
             try:

@@ -131,6 +131,36 @@ var cswui = {};
 			this.uri.query[opt] = val;
 		}
 
+		if( 'scale' in this.options ) {
+
+			opt = 'scale';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "scale" option must have a numeric value.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
+		if( 'offset' in this.options ) {
+
+			opt = 'offset';
+			val = Number(this.options[opt]);
+
+			if( isNaN(val) ) {
+				$(this.elm).html(AbstractField.template.replace('{{message}}',
+					'The "offset" option must have a numeric value.'));
+				return true;
+			}
+
+			this.options[opt] = val;
+			this.uri.query[opt] = val;
+		}
+
 		if( 'lowedge' in this.options ) {
 
 			opt = 'lowedge';
