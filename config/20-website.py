@@ -3,11 +3,17 @@
 Initialize Web Site
 '''
 
+import os
+from twisted.web.static import File
 from twisted.web.server import Site
 from twisted.web.resource import Resource
 
 webroot = Resource()
 log.msg('website.py: Root: %(r)s', r=webroot, logLevel=_INFO)
+
+indexResource = File(os.path.join(csweb_home, "static", "index.html"))
+webroot.putChild('', indexResource)
+log.msg('website.py: Resource added at "/": %(r)s', r=indexResource, logLevel=_INFO)
 
 website = Site(webroot)
 log.msg('website.py: Site: %(r)s', r=webroot, logLevel=_INFO)

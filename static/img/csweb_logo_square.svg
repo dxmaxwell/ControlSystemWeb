@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="200"
+   height="200"
+   id="svg2"
+   version="1.1"
+   inkscape:version="0.48.3.1 r9886"
+   sodipodi:docname="csweb_logo_square.svg">
+  <defs
+     id="defs4" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="2.4341549"
+     inkscape:cx="119.98845"
+     inkscape:cy="105.56595"
+     inkscape:document-units="px"
+     inkscape:current-layer="layer1"
+     showgrid="false"
+     inkscape:window-width="1421"
+     inkscape:window-height="980"
+     inkscape:window-x="178"
+     inkscape:window-y="33"
+     inkscape:window-maximized="0" />
+  <metadata
+     id="metadata7">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(0,-852.36217)">
+    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3003"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"><flowRegion
+         id="flowRegion3005"><rect
+           id="rect3007"
+           width="114.81481"
+           height="94.444443"
+           x="194.44444"
+           y="134.76959" /></flowRegion><flowPara
+         id="flowPara3009"></flowPara></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3019"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"><flowRegion
+         id="flowRegion3021"><rect
+           id="rect3023"
+           width="82.40741"
+           height="56.48148"
+           x="480.55554"
+           y="301.43625" /></flowRegion><flowPara
+         id="flowPara3025"></flowPara></flowRoot>    <flowRoot
+       xml:space="preserve"
+       id="flowRoot3959"
+       style="font-size:40px;font-style:normal;font-weight:normal;text-align:center;line-height:125%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"><flowRegion
+         id="flowRegion3961"><rect
+           id="rect3963"
+           width="400.13885"
+           height="66.552872"
+           x="164.32808"
+           y="402.44464" /></flowRegion><flowPara
+         id="flowPara3965"></flowPara></flowRoot>    <text
+       xml:space="preserve"
+       style="font-size:45.92845535px;font-style:normal;font-weight:normal;text-align:center;line-height:114.99999762%;letter-spacing:0px;word-spacing:0px;text-anchor:middle;fill:#000000;fill-opacity:1;stroke:none;font-family:Sans"
+       x="98.236572"
+       y="887.73547"
+       id="text5647"
+       sodipodi:linespacing="115%"><tspan
+         sodipodi:role="line"
+         id="tspan5649"
+         x="101.74436"
+         y="887.73547"
+         style="line-height:114.99999762%;letter-spacing:7.01557159px;fill:#009100;fill-opacity:1">&lt;W<tspan
+   style="font-size:36.7427597px;line-height:114.99999762%;letter-spacing:7.01557159px;fill:#009100;fill-opacity:1"
+   id="tspan5665">EB</tspan>&gt;</tspan><tspan
+         sodipodi:role="line"
+         x="99.384781"
+         y="940.55322"
+         id="tspan5653"
+         style="line-height:114.99999762%;letter-spacing:2.29642248px;fill:#e27000;fill-opacity:1">C<tspan
+   style="font-size:36.7427597px;line-height:114.99999762%;fill:#e27000;fill-opacity:1"
+   id="tspan5661">ONTROL</tspan></tspan><tspan
+         sodipodi:role="line"
+         x="102.78349"
+         y="993.37091"
+         id="tspan5657"
+         style="line-height:114.99999762%;letter-spacing:9.09383392px;fill:#e27000;fill-opacity:1">S<tspan
+   style="font-size:36.7427597px;line-height:114.99999762%;letter-spacing:9.09383392px;fill:#e27000;fill-opacity:1"
+   id="tspan5663">YSTEM</tspan></tspan><tspan
+         sodipodi:role="line"
+         x="99.597198"
+         y="1046.1886"
+         id="tspan5659"
+         style="line-height:114.99999762%;letter-spacing:2.72126079px;fill:#aa0000;fill-opacity:1">&lt;/W<tspan
+   style="font-size:36.7427597px;line-height:114.99999762%;letter-spacing:2.72126079px;fill:#aa0000;fill-opacity:1"
+   id="tspan5667">EB</tspan>&gt;</tspan></text>
+  </g>
+</svg>
