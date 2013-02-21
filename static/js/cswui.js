@@ -376,23 +376,23 @@ var cswui = {};
 		cswui.AbstractField.prototype._socketOnData.call(this, event);
 		if( (event.data !== undefined) && (typeof event.data === 'object') ) {
 			var data = event.data;
-			var elm = $(this.elm).find('.csw-value').get(0);
+			var elm = $(this.elm).find('.csw-value').first();
 			if( elm ) {
 				if( (data.char_value !== undefined) && (typeof data.char_value === 'string') && (data.char_value !== "") ) {
-					$(elm).html(data.char_value);
+					elm.html(data.char_value);
 				} else if( (data.value !== undefined) && (typeof data.value === 'number') ) {
 					if( (data.precision !== undefined) && (typeof data.precision === 'number') && (data.precision > 0) ) {
-						$(elm).html(data.value.toPrecision(data.precision));
+						elm.html(data.value.toPrecision(data.precision));
 					} else {
-						$(elm).html(data.value.toString());
+						elm.html(data.value.toString());
 					}
 				} else {
-					$(elm).html("<VALUE>");
+					elm.html("<VALUE>");
 				}
 			}
-			elm = $(this.elm).find('.csw-units').get(0);
+			elm = $(this.elm).find('.csw-units').first();
 			if( (elm) && (data.units !== undefined) && (typeof data.units === 'string') && (data.units !== "") ) {
-				$(elm).html(data.units);
+				elm.html(data.units);
 			}
 			elm = $(this.elm);
 			if( (elm) && (data.pvname !== undefined) ) {
