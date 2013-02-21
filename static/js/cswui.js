@@ -394,6 +394,19 @@ var cswui = {};
 			if( (elm) && (data.units !== undefined) && (typeof data.units === 'string') && (data.units !== "") ) {
 				$(elm).html(data.units);
 			}
+			elm = $(this.elm);
+			if( (elm) && (data.pvname !== undefined) ) {
+				// If a tooltip library is available (ie Bootstrap) use it. //
+				if( (elm.tooltip !== undefined) && (typeof elm.tooltip === 'function') ) {
+					if( data.pvname !== elm.attr("data-original-title") ) {
+						elm.tooltip("destroy").attr("title", data.pvname).tooltip();
+					}
+				} else {
+					if( data.pvname !== elm.attr("title") ) {
+						elm.attr("title", data.pvname)
+					}
+				}
+			}
 		}
 	};
 
