@@ -47,23 +47,9 @@ class TwitterNotifier(Notifier):
 
     def notify(self, url, data, destinations):
 
-        if "name" in data:
-            msg = self._toHashTag(data["name"])            
-        elif "pvname" in data:
-            msg = self._toHashTag(data["pvname"])
-        else:
-            msg = "UnknownDevice"
+        msg = self._toHashTag(self._name_from_data(data))
 
-        if "char_value" in data:
-            msg += " " + data['char_value']
-            if "units" in data:
-                msg += data["units"]
-        elif "value" in data:
-            msg += " " + str(data["value"])
-            if "units" in data:
-                msg += data["units"]
-        else:
-            msg += " N/A"
+        msg += " " + self._str_value_from_data(data)
 
         if "timestamp" in data:
             time = datetime.datetime.fromtimestamp(data["timestamp"])
@@ -73,17 +59,17 @@ class TwitterNotifier(Notifier):
         prefix = time.strftime(self._prefix)
         postfix = time.strftime(self._postfix)
         
-        length = 160 - len(prefix) - len(postfix)
+        length = 140 - len(prefix) - len(postfix)
         if length <= 0:
-            log.msg("TwitterNotifier: notify: Prefix and Postfix length >160, will truncate", logLevel=_WARN)
+            log.msg("TwitterNotifier: notify: Prefix and Postfix length >140, will truncate", logLevel=_WARN)
             if len(prefix) > 40:
                 prefix = prefix[:37] + "..."
             if len(postfix) > 40:
                 postfix = postfix[:37] + "..."
-            length = 160 - len(prefix) - len(postfix)
+            length = 140 - len(prefix) - len(postfix)
 
         if length < len(msg):
-            log.msg("TwitterNotifier: notify: Message length >160 characters, will truncate", logLevel=_DEBUG)
+            log.msg("TwitterNotifier: notify: Message length >140 characters, will truncate", logLevel=_DEBUG)
             msg = msg[:(length-3)] + "..."
 
         msg = prefix + msg + postfix

@@ -26,19 +26,13 @@ class MailNotifier(Notifier):
 
 
     def notify(self, url, data, destinations):
-
-        msg = data['pvname'] + ": "
-        if 'char_value' in data:
-            msg += data['char_value'] 
-        elif 'value' in data:
-            msg += str(data['value'])
-        else:
-            msg += "(UNKNOWN)"
-
-        log.msg("MailNotifier: notify: Message: %(m)s", m=msg, logLevel=_DEBUG)
+        name = self._name_from_data(data)
+        subject = "[CSWEB] " + name + " Update"
+        message = name + ": " + self._str_value_from_data(data)
+        log.msg("MailNotifier: notify: Message: %(m)s", m=message, logLevel=_DEBUG)
 
         for dest in destinations:
             log.msg("MailNotifier: notify: Send to %(d)s", d=dest, logLevel=_DEBUG)
-            smptDeferred = self._smtpAgent.send(dest, self._fromAddress, msg, "%s Update" % data['pvname'])
-            smptDeferred.addCallback(self._notifyCallback)
-            smptDeferred.addErrback(self._notifyErrback)
+            d = self._smtpAgent.send(dest, self._fromAddress, message, subject)
+            d.addCallback(self._notifyCallback)
+            d.addErrback(self._notifyErrback)

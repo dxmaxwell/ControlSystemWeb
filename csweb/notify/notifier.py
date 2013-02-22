@@ -48,6 +48,27 @@ class Notifier:
         log.msg("Notifier: _notifyErrback: Error while sending notification: %(f)s", f=failure, logLevel=_WARN)
 
 
+    def _name_from_data(self, data, defaultName="UnknownDevice"):
+        name = defaultName
+        if "name" in data:
+            name = str(data["name"])
+        elif "pvname" in data:
+            name = str(data["pvname"])
+        return name
+
+
+    def _str_value_from_data(self, data, defaultValue="<NAN>"):
+        value = defaultValue
+        if "char_value" in data:
+            value = str(data["char_value"])
+            if "units" in data:
+                value += str(data["units"])
+        elif "value" in data:
+            value = str(data["value"])
+            if "units" in data:
+                value += str(data["units"])
+        return value
+        
 
 class _NotifierSubscription:
 

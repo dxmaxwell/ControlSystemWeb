@@ -28,13 +28,11 @@ class SMSNotifier(Notifier):
 
     def notify(self, url, data, destinations):
 
-        msg = data['pvname'] + ": "
-        if 'char_value' in data:
-            msg += data['char_value'] 
-        elif 'value' in data:
-            msg += str(data['value'])
-        else:
-            msg += "(UNKNOWN)"
+        msg = "(CSWEB) " + self._name_from_data(data) + ": " + self._str_value_from_data(data)
+
+        if len(msg) > 160:
+            log.msg("SMSNotifier: notify: Message length >160. Will truncate message.", logLevel=_DEBUG)
+            msg = msg[:157] + "..."
 
         log.msg("SMSNotifier: notify: Message: '%(m)s'", m=msg, logLevel=_DEBUG)
 
