@@ -23,20 +23,12 @@ _WARN = log.WARN
 
 class MailNotifier:
 
-    def __init__(self, smtpHost, fromAddr):
-        
-        if isinstance(smtpHost, (list, tuple)):
-            if len(smtpHost) > 1:
-                self._smtp = (smtpHost[0], smtpHost[1])
-            elif len(smtpHost) > 0:
-                self._smtp = (smtpHost[0], 25)
-        else:
-            self._smtp = (str(smtpHost), 25)
-        
-        self._from = parseaddr(fromAddr)
-        if self._from[1] == '':
+    def __init__(self, smtpAgent, fromAddress):
+        self._smtpAgent = smtpAgent
+        fromAddress = parseaddr(fromAddress)
+        if fromAddress[1] == '':
             log.msg("MailNotifier: __init__: Invalid 'from' email address. Sending mail my fail!", logLevel=_WARN)
-        
+        self._fromAddress = formataddr(fromAddress)
         self._subscriptions = {}
 
 
@@ -68,17 +60,9 @@ class MailNotifier:
 
         for dest in destinations:
             log.msg("MailNotifier: notify: Send to %(d)s", d=dest, logLevel=_DEBUG)
-            mime = MIMEText(msg)
-            mime['To'] = formataddr(dest)
-            mime['From'] =  formataddr(self._from)
-            mime['Subject'] = "%s Update" % data['pvname']
-
-            smptDeferred = Deferred()
+            smptDeferred = self._smtpAgent.send(dest, self._fromAddress, msg, "%s Update" % data['pvname'])
             smptDeferred.addCallback(self._notify_callback)
             smptDeferred.addErrback(self._notify_errback)
-
-            senderFactory = SMTPSenderFactory(self._from[1], dest[1], StringIO(mime), smptDeferred)
-            reactor.connectTCP(self._smtp[0], self._smtp[1], senderFactory)
 
 
     def _notify_callback(self, result):
@@ -132,11 +116,7 @@ class MailNotifierSubscriptionProtocol(protocol.Protocol):
 
 
     def addDestination(self, dest):
-        parsedest = parseaddr(dest)
-        if parsedest[1] != '':
-            self._destinations.append(parsedest)
-        else:
-            log.msg("MailNotifierSubscriptionProtocol: addDestination: Destination address parse error: %(a)s", a=dest, logLevel=_WARN)
+        self._destinations.append(dest)
         
 
     def dataReceived(self, data):
