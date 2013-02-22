@@ -3,47 +3,26 @@
 Send mail notifications on events.
 '''
 
-from StringIO import StringIO
 from email.utils import parseaddr, formataddr
-from email.mime.text import MIMEText
-
-from .. import device
 
 from ..util import log
-
-from twisted.internet import protocol
-from twisted.internet import reactor
-from twisted.internet.defer import Deferred
-from twisted.mail.smtp import SMTPSenderFactory
+from .notifier import Notifier
 
 _TRACE = log.TRACE
 _DEBUG = log.DEBUG
 _WARN = log.WARN
 
 
-class MailNotifier:
+class MailNotifier(Notifier):
 
     def __init__(self, smtpAgent, fromAddress):
+        Notifier.__init__(self)
         self._smtpAgent = smtpAgent
         fromAddress = parseaddr(fromAddress)
         if fromAddress[1] == '':
-            log.msg("MailNotifier: __init__: Invalid 'from' email address. Sending mail my fail!", logLevel=_WARN)
+            log.msg("MailNotifier: __init__: Invalid 'From' address. Sending mail will fail!", logLevel=_WARN)
         self._fromAddress = formataddr(fromAddress)
         self._subscriptions = {}
-
-
-    def register(self, url, dest):
-        if url not in self._subscriptions:
-            log.msg("MailNotifier: register: No subsciption for URL %(r)s", r=url, logLevel=_DEBUG)
-            protocolFactory = MailNotifierSubscriptionProtocolFactory(url, self)
-            deferred = device.subscribe(url, protocolFactory)
-            subscription = _MailNotifierSubscription(deferred)
-            log.msg("MailNotifier: register: Add subsciption %(s)s", s=subscription, logLevel=_DEBUG)
-            self._subscriptions[url] = subscription
-        else:
-            log.msg("MailNotifier: register: Subsciption found for URL %(r)s", r=url, logLevel=_DEBUG)
-            subscription = self._subscriptions[url]
-        subscription.addDestination(dest)
 
 
     def notify(self, url, data, destinations):
@@ -61,79 +40,5 @@ class MailNotifier:
         for dest in destinations:
             log.msg("MailNotifier: notify: Send to %(d)s", d=dest, logLevel=_DEBUG)
             smptDeferred = self._smtpAgent.send(dest, self._fromAddress, msg, "%s Update" % data['pvname'])
-            smptDeferred.addCallback(self._notify_callback)
-            smptDeferred.addErrback(self._notify_errback)
-
-
-    def _notify_callback(self, result):
-        log.msg("MailNotifier: _notify_callback: Sending email successful %(r)s", r=result, logLevel=_TRACE)
-
-
-    def _notify_errback(self, err):
-        log.msg("MailNotifier: _notify_errback: Error while sending mail: %(e)s", e=err, logLevel=_WARN)
-
-
-
-class _MailNotifierSubscription:
-
-    def __init__(self, deferred):
-        self._protocol = None
-        self._deferred = deferred
-        self._deferred.addCallback(self._subscribeCallback)
-        self._deferred.addErrback(self._subscribeErrback)
-        self._destinations = []
-
-
-    def addDestination(self, dest):
-        if self._protocol is not None:
-            self._protocol.addDestination(dest)
-        else:
-            self._destinations.append(dest)
-
-
-    def _subscribeCallback(self, protocol):
-        log.msg("_MailNotifierSubscription: _subscribeCallback: Protocol %(p)s", p=protocol, logLevel=_DEBUG)
-        self._protocol = protocol
-        for dest in self._destinations:
-            self._protocol.addDestination(dest)
-        del self._destinations[:]
-        
-        
-    def _subscribeErrback(self, failure):
-        log.msg("_MailNotifierSubscription: _subscribeErrback: Failure %(f)s", f=failure, logLevel=_WARN)
-
-
-
-class MailNotifierSubscriptionProtocol(protocol.Protocol):
-    '''
-    Protocol
-    '''
-
-    def __init__(self, url, notifier):
-        self._url = url
-        self._notifier = notifier
-        self._destinations = []
-
-
-    def addDestination(self, dest):
-        self._destinations.append(dest)
-        
-
-    def dataReceived(self, data):
-        log.msg("MailNotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
-        self._notifier.notify(self._url, data, self._destinations)
-        
-
-
-class MailNotifierSubscriptionProtocolFactory(protocol.Factory):
-    '''
-    Protocol Factory
-    '''
-
-    def __init__(self, url, notifier):
-        self._url = url
-        self._notifier = notifier
-
-
-    def buildProtocol(self, addr):
-        return MailNotifierSubscriptionProtocol(self._url, self._notifier)
+            smptDeferred.addCallback(self._notifyCallback)
+            smptDeferred.addErrback(self._notifyErrback)
