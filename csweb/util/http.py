@@ -76,7 +76,7 @@ class BasicHTTPAgent(HTTPAgent):
 
 
     def _prepareHeaders(self, method, uri, headers, body):
-        twHeaders = HTTPAgent._prepareHeaders(self, headers)
+        twHeaders = HTTPAgent._prepareHeaders(self, method, uri, headers, body)
         if twHeaders is None:
             twHeaders = Headers()
         twHeaders.addRawHeader('Authorization',  self._authication)
