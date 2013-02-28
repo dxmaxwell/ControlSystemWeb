@@ -15,6 +15,10 @@ indexResource = File(os.path.join(csweb_home, "static", "index.html"))
 webroot.putChild('', indexResource)
 log.msg('website.py: Resource added at "/": %(r)s', r=indexResource, logLevel=_INFO)
 
+faviconResource = File(os.path.join(csweb_home, "static", "img", "csweb_favicon.ico"))
+webroot.putChild("favicon.ico", faviconResource)
+log.msg('website.py: Resource added at "/favicon.ico": %(r)s', r=faviconResource, logLevel=_INFO)
+
 website = Site(webroot)
 log.msg('website.py: Site: %(r)s', r=webroot, logLevel=_INFO)
 
