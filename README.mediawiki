@@ -1,0 +1,114 @@
+<img src="static/img/csweb_logo_horiz_750.png" alt="Control System Web"/>
+
+
+'''A Flexible Service for Monitoring the [http://www.aps.anl.gov/epics EPICS] Distributed Control System'''
+
+
+
+===Features===
+
+* Web interface for monitoring process variables.
+* Send messages to notify of process variable changes.
+
+
+===Notifications===
+
+====Email====
+
+Sending Email notification as simple as configuring a SMTP agent and then registering the destination addresses:
+
+ from csweb.util.smtp import SMTPAgent
+ from csweb.notify.mail import MailNotifier
+ 
+ mailNotifier = MailNotifier(SMTPAgent("smtp.host.com", 25), "From Name <from@host.com>")
+ 
+ mailNotifier.register("epics:SR2026X:Status", "Real Name <email@host.com>")
+
+
+====SMS====
+
+Sending SMS notification is as simple as configuring a [http://twilio.com Twilio] agent and then registering the destination numbers:
+
+ from csweb.util.http import BasicHTTPAgent
+ from csweb.util.twilio import TwilioSMSAgent
+ from csweb.notify.sms import SMSNotifier
+ 
+ smsAgent = TwilioSMSAgent(BasicHTTPAgent("username","password"))
+ smsNotifier = SMSNotifier(smsAgent, "+1FromNumber")
+ 
+ smsNotifier.register("epics:SR2026X:Status?lowedge=0", "+1ToNumber")
+
+Support for alternative SMS message services can easily be added to CSW.
+
+
+====Twitter====
+
+Updating your Twitter status is as simple as configuring a [http://twitter.com Twitter] agent and registering it with a ''TwitterNotifier'':
+
+ import oauth2 as oauth
+ from csweb.util.http import OAuthHTTPAgent
+ from csweb.util.twitter import TwitterAgent
+ from csweb.notify.twitter import TwitterNotifier
+ 
+ twitterNotifier = TwitterNotifier()
+ 
+ token = oauth.Token("TokenKey", "TokenSecret")
+ consumer = oauth.Consumer("ConsumerKey", "ConsumerSecret")
+ twitterNotifier.addAgent("AgentName", TwitterAgent(OAuthHTTPAgent(consumer, token)))
+ 
+ twitterNotifier.register("epics:SR2026X:Status", "AgentName")
+
+
+===Web Interface===
+
+Include the CSW JavaScript libraries (and dependencies) in your HTML document:
+
+ <script type="text/javascript" src="/static/lib/jquery/1.8/jquery.min.js"></script>
+ <script type="text/javascript" src="/static/lib/dygraph/dygraph.min.js"></script>
+ <script type="text/javascript" src="/static/js/csweb.js"></script>
+ <script type="text/javascript" src="/static/js/cswui.js"></script>
+
+
+Then, CSW fields are specified in HTML with the following markup:
+
+<pre>
+<div class="[CSW_FIELD]">
+    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
+    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
+    ...
+</div>
+</pre>
+
+====Fields====
+
+Supported values for '''CSW_FIELD''' are the following:
+
+* '''csw-readonly-field''' - A readonly text field that display the value of the specified device.
+* '''csw-strip-chart''' - A strip chart that displays the value of the specified device over time.
+
+====Options====
+
+Supported values for '''CSW_FIELD_OPTION''' are the following:
+
+* '''device''' - Specify the identifier use to access the device. Generally this is the PV name.
+* '''protocol''' - Specified the protocol (aka scheme) to use with this device. Defaults to "epics".
+* '''buffer''' - Use a buffer of the specified length. Only useful for charting type fields.
+* '''rate''' - Specified ''period'' in seconds to force a device value update.
+* '''ratelimit''' - Specified ''period'' in seconds to limit device value updates.
+* '''lowedge''' - Device value updated when its value goes below the specified value.
+* '''highedge''' - Device value updated when its value goes above the specified value.
+* '''threshold''' - Device value updated when its value goes above or below the specified value.
+* '''name'''  - Specify the name of the device. Displayed on Y-axis of chart.
+* '''units''' - Specify the units of the device.
+* '''precision''' - Specify the precision (number of decimal places) of a device value to show.
+* '''scale''' - Multiply the device value by the constant value specified.
+* '''offset''' - Add to the device value the constant value specified.
+
+====Examples====
+
+<pre>
+<div class="csw-strip-chart">
+    <div name="device">TM2026X-101</div>
+    <div name="buffer">20</div>
+</div>
+</pre>
