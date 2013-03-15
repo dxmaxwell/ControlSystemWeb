@@ -23,7 +23,6 @@ class EpicsSubscription:
     def __init__(self, subkey, subscriptions):
         self._subkey = subkey
         self._subscriptions = subscriptions
-        print '**** ' + self._subkey 
         self._subscriptions[self._subkey] = self
         self._protocolFactory = None # override in superclass
 
