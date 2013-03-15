@@ -40,6 +40,27 @@ class Notifier:
         subscription.addDestination(dest, self._coerse_expiry(expiry))
  
 
+    def unregister(self, url, dest):
+        log.msg("Notifier: unregister: URL:%(r)s, Dest:%(d)s", r=url, d=dest, logLevel=_DEBUG)
+        if url in self._subscriptions:
+            log.msg("Notifier: unregister: Subsciption found for URL: %(r)s", r=url, logLevel=_TRACE)
+            sub = self._subscriptions[url]
+            if sub.removeDestination(dest) == 0:
+                # All destinations have been removed. Disconnect and remove subscription.
+                log.msg("Notifier: unregister: Disconnect subscription", logLevel=_TRACE)
+                sub.disconnect()
+                log.msg("Notifier: unregister: Remove subsciption", logLevel=_TRACE)
+                del self._subscriptions[url]
+        else:
+            log.msg("Notifier: unregister: No Subsciption found for URL: %(r)s", r=url, logLevel=_WARN)
+
+
+    def registered(self):
+        registered = {}
+        for url, sub in self._subscriptions.iteritems():
+            registered[url] = sub.destinations()
+        return registered
+
 
     def notify(self, url, data, destinations):
         log.msg("Notifier: notify: Abstract implementation. Should be overridden by subclass", logLevel=_WARN)
@@ -92,6 +113,7 @@ class _NotifierSubscription:
         self._deferred = deferred
         self._deferred.addCallback(self._subscribeCallback)
         self._deferred.addErrback(self._subscribeErrback)
+        self._disconnected = False
         self._destinations = {}
 
 
@@ -99,21 +121,52 @@ class _NotifierSubscription:
         if self._protocol is not None:
             self._protocol.addDestination(dest, expiry)
         elif dest is not None:
-            if dest not in self._destinations:
-                log.msg("_NotifierSubscription: addDestination: Add destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
+            if (dest not in self._destinations) or (self._destinations[dest] != expiry):
+                log.msg("_NotifierSubscription: addDestination: Add/Update destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
+                self._destinations[dest] = expiry
             else:
-                log.msg("_NotifierSubscription: addDestination: Update destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
-            self._destinations[dest] = expiry
+                log.msg("_NotifierSubscription: addDestination: Destination already added: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
         else:
             log.msg("_NotifierSubscription: addDestination: Destination is None", logLevel=_WARN)
 
 
+    def removeDestination(self, dest):
+        if self._protocol is not None:
+            return self._protocol.removeDestination(dest)
+        if dest in self._destinations:
+            del self._destinations[dest]
+        else:
+            log.msg("_NotifierSubscription: removeDestination: No Destination found: %(d)s", d=dest, logLevel=_WARN)
+        return len(self._destinations)
+
+
+    def destinations(self):
+        if self._protocol is not None:
+            return self._protocol.destinations()
+        else:
+            return dict(self._destinations)
+
+
+    def disconnect(self):
+        if not self._disconnected:
+            self._disconnected = True
+            if self._protocol is not None:
+                log.msg("_NotifierSubscription: disconnect: Lose Connection", logLevel=_TRACE)
+                self._protocol.transport.loseConnection()
+                self._protocol = None
+        else:
+            log.msg("_NotifierSubscription: disconnect: Already disconnected", logLevel=_TRACE)
+
+
     def _subscribeCallback(self, protocol):
         log.msg("_NotifierSubscription: _subscribeCallback: Protocol %(p)s", p=protocol, logLevel=_TRACE)
-        self._protocol = protocol
-        for dest, expiry in self._destinations.iteritems():
-            self._protocol.addDestination(dest, expiry)
-        self._destinations.clear()
+        if not self._disconnected:
+            self._protocol = protocol
+            for dest, expiry in self._destinations.iteritems():
+                self._protocol.addDestination(dest, expiry)
+            self._destinations.clear()
+        else:
+            log.msg("_NotifierSubscription: _subscribeCallback: Subscription has already been disconnected.", logLevel=_DEBUG)
         
         
     def _subscribeErrback(self, failure):
@@ -135,16 +188,28 @@ class _NotifierSubscriptionProtocol(protocol.Protocol):
 
     def addDestination(self, dest, expiry):
         if dest is not None:
-            if dest not in self._destinations:
-                log.msg("_NotifierSubscriptionProtocol: addDestination: Add destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
+            if (dest not in self._destinations) or (self._destinations[dest] != expiry):
+                log.msg("_NotifierSubscriptionProtocol: addDestination: Add/Update destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
+                self._destinations[dest] = expiry
                 self._notify({ dest:expiry })
             else:
-                log.msg("_NotifierSubscriptionProtocol: addDestination: Update destination: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
-            self._destinations[dest] = expiry
+                log.msg("_NotifierSubscriptionProtocol: addDestination: Destination already added: %(d)s (%(e)s)", d=dest, e=expiry, logLevel=_TRACE)
         else:
             log.msg("_NotifierSubscriptionProtocol: addDestination: Destination is None", logLevel=_WARN)
     
 
+    def removeDestination(self, dest):
+        if dest in self._destinations:
+            del self._destinations[dest]
+        else:
+            log.msg("_NotifierSubscriptionProtocol: removeDestination: No Destination found: %(d)s", d=dest, logLevel=_WARN)
+        return len(self._destinations)
+
+
+    def destinations(self):
+        return dict(self._destinations)
+
+    
     def dataReceived(self, data):
         log.msg("_NotifierSubscriptionProtocol: dataReceived: Data type %(t)s", t=type(data), logLevel=_TRACE)
         self._data = dict(data)
