@@ -1,6 +1,6 @@
 # coding=UTF-8
 '''
-DeviceProvider interface defines the standard operations for interacting with devices.
+Interface that define the standard operations for interacting with devices.
 '''
 
 
@@ -9,7 +9,7 @@ class DeviceProvider():
     Abstract implementation of the DeviceProvider interface. 
     '''
 
-    def get(self, uri):
+    def get(self):
         '''
         Override this abstract implementation to handle the GET operation.
         
@@ -20,7 +20,7 @@ class DeviceProvider():
         raise NotImplementedError()
 
 
-    def put(self, uri, value):
+    def put(self, value):
         '''
         Override this abstract implementation to handle the PUT operation.
         
@@ -31,7 +31,7 @@ class DeviceProvider():
         raise NotImplementedError()
 
 
-    def subscribe(self, uri, protocolFactory):
+    def subscribe(self, protocolFactory):
         '''
         Override this abstract implementation to handle the SUBSCRIBE operation.
         
@@ -43,10 +43,33 @@ class DeviceProvider():
         raise NotImplementedError()
 
 
-    def supports(self, uri):
+class DeviceFactory():
+    '''
+    Abstract implementation of the DeviceFactory interface. 
+    '''
+
+    def cacheable(self):
         '''
-        Override this abstract implementation to indicate if the specified URI is supported.
-        
-        The implementation must return either True or False.
+        Override this abstract implementation to indicate if this factory is cacheable.
+
+        The implementation must resuturn True or False.
         '''
-        return False
+        raise NotImplementedError()
+
+
+    def buildProvider(self, uri):
+        '''
+        Override this abstract implementation to build a "DeviceProvder" for the specified URI.
+
+        The implementation must return a "DeviceProvider" object or raise a "ValueError" exception.
+        '''
+        raise NotImplementedError()
+
+
+class NotSupportedError(ValueError):
+    '''
+    A custom exception class to indicate that the specified URI is not supported.
+
+    For example the scheme of the URI may be different than expected by the factory.
+    '''
+    pass

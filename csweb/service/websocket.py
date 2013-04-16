@@ -59,8 +59,13 @@ class WebSocketDeviceProtocol(protocol.Protocol):
     def _handleSubscribe(self, request):
         if request.url not in self._subscriptions:
             log.msg("WebSocketDeviceProtocol: _handleSubscribe: No subsciption for URL %(r)s", r=request, logLevel=_DEBUG)
+            try:
+                provider = device.manager.buildProvider(request.url)
+            except ValueError as error:
+                log.msg("WebSocketDeviceProtocol: _handleSubscribe: Error building provider: %(e)s", e=error, logLevel=_WARN)
+                return
             protocolFactory = WSDeviceSubscriptionProtocolFactory(request.url, self)
-            deferred = device.subscribe(request.url, protocolFactory)
+            deferred = provider.subscribe(protocolFactory)
             subscription = _WebSocketDeviceSubscription(deferred)
             log.msg("WebSocketDeviceProtocol: _handleSubscribe: Add subsciption %(s)s", s=subscription, logLevel=_TRACE)
             self._subscriptions[request.url] = subscription

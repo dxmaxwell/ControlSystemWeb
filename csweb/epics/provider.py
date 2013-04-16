@@ -19,12 +19,6 @@ Supported Parameters:
     offset=<value>
 '''
 
-
-
-from urllib import urlencode
-from urlparse import urlsplit, urlunsplit, parse_qsl
-
-
 from .subs.client import EpicsClientSubscription
 from .subs.buffer import EpicsBufferSubscription
 from .subs.rate import EpicsRateSubscription
@@ -38,13 +32,10 @@ from .subs.scale import EpicsScaleSubscription
 from .subs.scale import EpicsOffsetSubscription
 
 from ..util.url import URL
-from ..util import log, dist
+from ..util import log
 
-from ..device.provider import DeviceProvider
-from ..device.manager import NotSupportedError
+from ..device.provider import DeviceProvider, DeviceFactory, NotSupportedError
 
-from twisted.python.failure import Failure
-from twisted.internet import defer, protocol, reactor
 
 _TRACE = log.TRACE
 _DEBUG = log.DEBUG
@@ -64,32 +55,22 @@ _EPICS_PARAM_SCALE = 'scale'
 _EPICS_PARAM_OFFSET = 'offset'
 
 
-
 class EpicsDeviceProvider(DeviceProvider):
     '''
     Implementation of DeviceProvider interface for accessing EPICS Channel Access.
     '''
 
-    def __init__(self, scheme=_EPICS_DEFAULT_SCHEME):
-        URL.register_scheme(scheme)
-        self._subscriptions = {}
-        self._scheme = scheme
+    def __init__(self, subscriptions, url):
+        self._subscriptions = subscriptions
+        self._url = url
+        
 
-
-    def subscribe(self, url, protocolFactory):
+    def subscribe(self, protocolFactory):
         '''
         Subscribe to the specified EPICS PV.  
         '''
-        try:
-            url = self._supports(url)
-            log.msg("EpicsDeviceProvider: subscribe: Supported URI: %(u)s", u=url, logLevel=_DEBUG)
-        except:
-            d = defer.Deferred()
-            reactor.callLater(0, d.errback, Failure())
-            log.msg("EpicsDeviceProvider: subscribe: Unsuppored URI: %(u)s", u=url, logLevel=_WARN)
-            return d
 
-
+        url = URL(self._url)
         query = dict(url.query)
         url.query.clear()
 
@@ -214,8 +195,24 @@ class EpicsDeviceProvider(DeviceProvider):
         return subscription.addProtocolFactory(protocolFactory)
 
 
-    def _supports(self, url):
-        url = URL(url)
+class EpicsDeviceFactory(DeviceFactory):
+    '''
+    Implementation of DeviceFactory interface for accessing EPICS Channel Access.
+    '''
+
+    def __init__(self, scheme=_EPICS_DEFAULT_SCHEME, cacheable=True):
+        self._scheme = scheme
+        self._cacheable = cacheable
+        self._subscriptions = {}
+        URL.register_scheme(scheme)
+
+
+    def cacheable(self):
+        return self._cacheable
+
+
+    def buildProvider(self, url):
+        url = URL(str(url))
         if url.scheme != self._scheme:
             raise NotSupportedError("Scheme (%s) not supported by EpicsDeviceProvider" % (result.scheme))
 
@@ -233,90 +230,82 @@ class EpicsDeviceProvider(DeviceProvider):
         url.params.retain((_EPICS_PARAM_SCALE,_EPICS_PARAM_OFFSET,_EPICS_PARAM_LOWEDGE,_EPICS_PARAM_HIGHEDGE,_EPICS_PARAM_THRESHOLD,_EPICS_PARAM_RATE_LIMIT,_EPICS_PARAM_RATE,_EPICS_PARAM_NAME,_EPICS_PARAM_UNITS,_EPICS_PARAM_PRECISION,_EPICS_PARAM_BUFFER))
 
         if _EPICS_PARAM_RATE in url.query and _EPICS_PARAM_RATE_LIMIT in url.query:
-            raise NotSupportedError("Parameters '%s' and '%s' are mutually exclusive" % (_EPICS_PARAM_RATE,_EPICS_PARAM_RATE_LIMIT))
+            raise ValueError("Parameters '%s' and '%s' are mutually exclusive" % (_EPICS_PARAM_RATE,_EPICS_PARAM_RATE_LIMIT))
 
         if _EPICS_PARAM_RATE in url.query:
             try:
                 url.query[_EPICS_PARAM_RATE] = float(url.query[_EPICS_PARAM_RATE])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
             if url.query[_EPICS_PARAM_RATE] <= 0.0:
-                raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
+                raise ValueError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE,url.query[_EPICS_PARAM_RATE]))
 
         if _EPICS_PARAM_SCALE in url.query:
             try:
                 url.query[_EPICS_PARAM_SCALE] = float(url.query[_EPICS_PARAM_SCALE])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_SCALE,url.query[_EPICS_PARAM_SCALE]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_SCALE,url.query[_EPICS_PARAM_SCALE]))
 
         if _EPICS_PARAM_OFFSET in url.query:
             try:
                 url.query[_EPICS_PARAM_OFFSET] = float(url.query[_EPICS_PARAM_OFFSET])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_OFFSET,url.query[_EPICS_PARAM_OFFSET]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_OFFSET,url.query[_EPICS_PARAM_OFFSET]))
 
         if _EPICS_PARAM_LOWEDGE in url.query:
             try:
                 url.query[_EPICS_PARAM_LOWEDGE] = float(url.query[_EPICS_PARAM_LOWEDGE])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_LOWEDGE,url.query[_EPICS_PARAM_LOWEDGE]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_LOWEDGE,url.query[_EPICS_PARAM_LOWEDGE]))
 
         if _EPICS_PARAM_HIGHEDGE in url.query:
             try:
                 url.query[_EPICS_PARAM_HIGHEDGE] = float(url.query[_EPICS_PARAM_HIGHEDGE])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_HIGHEDGE,url.query[_EPICS_PARAM_HIGHEDGE]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_HIGHEDGE,url.query[_EPICS_PARAM_HIGHEDGE]))
 
         if _EPICS_PARAM_THRESHOLD in url.query:
             try:
                 url.query[_EPICS_PARAM_THRESHOLD] = float(url.query[_EPICS_PARAM_THRESHOLD])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_THRESHOLD,url.query[_EPICS_PARAM_THRESHOLD]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_THRESHOLD,url.query[_EPICS_PARAM_THRESHOLD]))
 
         if _EPICS_PARAM_RATE_LIMIT in url.query:
             try:
                 url.query[_EPICS_PARAM_RATE_LIMIT] = float(url.query[_EPICS_PARAM_RATE_LIMIT])
             except:
-                raise NotSupportedError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
+                raise ValueError("Parameter (%s) non-numeric value (%s)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
             if url.query[_EPICS_PARAM_RATE_LIMIT] <= 0.0:
-                raise NotSupportedError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
+                raise ValueError("Parameter (%s) value <= 0.0 (%d)" % (_EPICS_PARAM_RATE_LIMIT,url.query[_EPICS_PARAM_RATE_LIMIT]))
 
         if _EPICS_PARAM_NAME in url.query:
             try:
                 url.query[_EPICS_PARAM_NAME] = str(url.query[_EPICS_PARAM_NAME])
             except:
-                raise NotSupportedError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_NAME,url.query[_EPICS_PARAM_NAME]))
+                raise ValueError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_NAME,url.query[_EPICS_PARAM_NAME]))
 
         if _EPICS_PARAM_UNITS in url.query:
             try:
                 url.query[_EPICS_PARAM_UNITS] = str(url.query[_EPICS_PARAM_UNITS])
             except:
-                raise NotSupportedError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_UNITS,url.query[_EPICS_PARAM_UNITS]))
+                raise ValueError("Parameter (%s) non-string value (%s)" % (_EPICS_PARAM_UNITS,url.query[_EPICS_PARAM_UNITS]))
 
         if _EPICS_PARAM_PRECISION in url.query:
             try:
                 url.query[_EPICS_PARAM_PRECISION] = int(url.query[_EPICS_PARAM_PRECISION])
             except:
-                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
+                raise ValueError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
             if url.query[_EPICS_PARAM_PRECISION] < 0:
-                raise NotSupportedError("Parameter (%s) value < 0 (%d)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
+                raise ValueError("Parameter (%s) value < 0 (%d)" % (_EPICS_PARAM_PRECISION,url.query[_EPICS_PARAM_PRECISION]))
 
         if _EPICS_PARAM_BUFFER in url.query:
             try:
                 url.query[_EPICS_PARAM_BUFFER] = int(url.query[_EPICS_PARAM_BUFFER])
             except ValueError:
-                raise NotSupportedError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+                raise ValueError("Parameter (%s) non-integer value (%s)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
             if url.query[_EPICS_PARAM_BUFFER] < 1:
-                raise NotSupportedError("Parameter (%s) value < 1 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+                raise ValueError("Parameter (%s) value < 1 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
             if url.query[_EPICS_PARAM_BUFFER] > 100000:
-                raise NotSupportedError("Parameter (%s) value > 100000 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
+                raise ValueError("Parameter (%s) value > 100000 (%d)" % (_EPICS_PARAM_BUFFER,url.query[_EPICS_PARAM_BUFFER]))
 
-        return url
-
-
-    def supports(self, url):
-        try:
-            self._supports(url)
-            return True
-        except NotSupportedError:
-            return False
+        return EpicsDeviceProvider(self._subscriptions, url)

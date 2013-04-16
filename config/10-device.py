@@ -5,5 +5,5 @@ Initialize Device Manager.
 
 from csweb import device
 
-deviceManager = device.instance()
+deviceManager = device.manager
 log.msg('device.py: DeviceManager: %(d)s', d=deviceManager, logLevel=_INFO)

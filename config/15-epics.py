@@ -2,8 +2,8 @@
 Configure EPICS device provider.
 '''
 
-from csweb.epics.provider import EpicsDeviceProvider
+from csweb.epics.provider import EpicsDeviceFactory
 
-epicsDeviceProvider = EpicsDeviceProvider();
-deviceManager.addProvider(epicsDeviceProvider)
-log.msg('epics.py: Add EpicsDeviceProvider: %(d)s', d=epicsDeviceProvider, logLevel=_INFO)
+epicsDeviceFactory = EpicsDeviceFactory();
+deviceManager.addFactory(epicsDeviceFactory)
+log.msg('epics.py: Add EpicsDeviceFactory: %(d)s', d=epicsDeviceFactory, logLevel=_INFO)

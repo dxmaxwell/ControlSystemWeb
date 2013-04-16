@@ -29,8 +29,13 @@ class Notifier:
         log.msg("Notifier: register: URL:%(r)s, Dest:%(d)s, Expiry:%(e)s", r=url, d=dest, e=expiry, logLevel=_DEBUG)
         if url not in self._subscriptions:
             log.msg("Notifier: register: No subsciption for URL %(r)s", r=url, logLevel=_TRACE)
+            try:
+                provider = device.manager.buildProvider(url)
+            except ValueError as error:
+                log.msg("Notifier: register: Error building provider: %(e)s", e=error, logLevel=_WARN)
+                return
             protocolFactory = _NotifierSubscriptionProtocolFactory(url, self)
-            deferred = device.subscribe(url, protocolFactory)
+            deferred = provider.subscribe(protocolFactory)
             subscription = _NotifierSubscription(deferred)
             log.msg("Notifier: register: Add subsciption %(s)s", s=subscription, logLevel=_TRACE)
             self._subscriptions[url] = subscription

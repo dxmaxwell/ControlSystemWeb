@@ -6,7 +6,7 @@ Utility to help with manipulating URLs
 import urllib
 import urlparse
 
-from collections import MutableMapping
+from collections import Mapping, MutableMapping, OrderedDict
 
 
 class URL:
@@ -27,10 +27,13 @@ class URL:
         return urllib.quote(s)
 
 
-    def __init__(self, url, scheme='', merge_params=False):
-        spliturl = urlparse.urlparse(url, scheme)
+    def __init__(self, url='', scheme='', merge_params=False):
+        if isinstance(url, URL):
+            spliturl = url
+            merge_params = url.is_merge_params() 
+        else:
+            spliturl = urlparse.urlparse(str(url), scheme)  
         self.scheme = spliturl.scheme
-        self.netloc = spliturl.netloc
         self.path = spliturl.path
         self.params = _ParamMap(spliturl.params)
         self.query = _ParamMap(spliturl.query)
@@ -43,15 +46,39 @@ class URL:
             self.merge_params()
 
 
+    def is_merge_params(self):
+        return (self.params is self.query)
+
+
     def merge_params(self):
-        if self.params is not self.query:
-            self.query.update(self.params)
+        if not self.is_merge_params():
+            # Merge carefully so parameters in 'query' 
+            # are not overwritten by parameters in 'params'.
+            for k, v in self.params.iteritems():
+                if k not in self.query:
+                    self.query[k] = v
             self.params = self.query
 
 
-    def __str__(self):    
+    def _netloc(self):
+        netloc = []
+        if self.hostname is not None:
+            if self.username is not None:
+                netloc.append(self.username)
+                if self.password is not None:
+                    netloc.append(":")
+                    netloc.append(self.password)
+                netloc.append("@")
+            netloc.append(self.hostname)
+            if self.port is not None:
+                netloc.append(":")
+                netloc.append(str(self.port))
+        return ''.join(netloc)
+
+
+    def __str__(self):
         scheme = self.scheme
-        netloc = self.netloc
+        netloc = self._netloc()
         path = self.path
         if self.params is self.query:
             params = ''
@@ -73,18 +100,37 @@ class URL:
 
 class _ParamMap(MutableMapping):
 
-    def __init__(self, query, sort_keys=False, lower_keys=False, upper_keys=False):
+    def __init__(self, query='', sort_keys=False, lower_keys=False, upper_keys=False):
+        MutableMapping.__init__(self)
         self._parameters = []
         self._sort_keys = sort_keys
         self._lower_keys = lower_keys
         self._upper_keys = upper_keys
-        self.update(query)
+        if isinstance(query, Mapping):
+            if isinstance(query, _ParamMap):
+                if query.is_sort_keys():
+                    self.set_sort_keys()
+                if query.is_lower_keys():
+                    self.set_lower_keys()
+                if query.is_upper_keys():
+                    self.set_upper_keys()
+            self.update(query)
+        elif query is not None:
+            self.update(OrderedDict(urlparse.parse_qsl(str(query))))
+
+
+    def is_sort_keys(self):
+        return self._sort_keys
 
 
     def set_sort_keys(self, sort_keys=True):
         if sort_keys:
             self._sort_keys = True
             self._parameters.sort(self._compare)
+
+
+    def is_lower_keys(self):
+        return self._lower_keys
 
 
     def set_lower_keys(self, lower_keys=True):
@@ -97,6 +143,10 @@ class _ParamMap(MutableMapping):
                 self.__setitem__(param[0], param[1])
 
 
+    def is_upper_keys(self):
+        return self._upper_keys
+
+
     def set_upper_keys(self, upper_keys=True):
         if upper_keys:
             self._lower_keys = False
@@ -107,55 +157,38 @@ class _ParamMap(MutableMapping):
                 self.__setitem__(param[0], param[1])
 
 
-    def update(self, obj):
-        if isinstance(obj, basestring):
-            params = urlparse.parse_qsl(obj)
-            return MutableMapping.update(self, params)
-        return MutableMapping.update(self, obj)
-
-
     def retain(self, key):
-        parameters = self._parameters
-        self._parameters = []
-        if isinstance(key, basestring):
-            if self._lower_keys:
-                key = key.lower()
-            elif self._upper_keys:
-                key = key.upper()
-            for param in parameters:
-                if key == param[0]:
-                    self.__setitem__(param[0], param[1])
-            return
-        for k in key:
-            if self._lower_keys:
-                k = k.lower()
-            elif self._upper_keys:
-                k = k.upper()
-            for param in parameters:
-                if k == param[0]:
-                    self.__setitem__(param[0], param[1])
+        if isinstance(key, (list, tuple)):
+            parameters = self._parameters
+            self._parameters = []
+            for k in key:
+                k = str(k).lower()
+                for param in parameters:
+                    if k == param[0].lower():
+                        self.__setitem__(param[0], param[1])
+        else:
+            self._retain([ str(key) ])
         return
 
 
     def __getitem__(self, key):
-        if self._lower_keys:
-            key = key.lower()
-        elif self._upper_keys:
-            key = key.upper()
+        key = key.lower()
         for param in self._parameters:
-            if key == param[0]:
+            if key == param[0].lower():
                 return param[1]
         else:
             raise KeyError() 
 
 
     def __setitem__(self, key, value):
-        if self._lower_keys:
+        k = key.lower()
+        if self.is_lower_keys():
             key = key.lower()
-        elif self._upper_keys:
+        elif self.is_upper_keys():
             key = key.upper()
+
         for idx in range(len(self._parameters)):
-            if key == self._parameters[idx][0]:
+            if k == self._parameters[idx][0].lower():
                 self._parameters.pop(idx)
                 self._parameters.insert(idx, (key, value))
                 break;
@@ -166,12 +199,9 @@ class _ParamMap(MutableMapping):
        
 
     def __delitem__(self, key):
-        if self._lower_keys:
-            key = key.lower()
-        elif self._upper_keys:
-            key = key.upper()
+        k = key.lower()
         for idx in range(len(self._parameters)):
-            if key == self._parameters[idx][0]:
+            if k == self._parameters[idx][0].lower():
                 self._parameters.pop(idx)
                 break;
         else:
@@ -186,12 +216,9 @@ class _ParamMap(MutableMapping):
 
 
     def __contains__(self, key):
-        if self._lower_keys:
-            key = key.lower()
-        elif self._upper_keys:
-            key = key.upper()
+        k = key.lower()
         for param in self._parameters:
-            if key == param[0]:
+            if k == param[0].lower():
                 return True
         return False
 
@@ -209,4 +236,4 @@ class _ParamMap(MutableMapping):
 
 
     def _compare(self, obj1, obj2):
-        return cmp(obj1[0], obj2[0])
+        return cmp(obj1[0].lower(), obj2[0].lower())
