@@ -26,7 +26,7 @@ class Notifier:
 
 
     def register(self, url, dest, expiry=None):
-        log.msg("Notifier: register: URL:%(r)s, Dest:%(d)s, Expiry:%(e)s", r=url, d=dest, e=expiry, logLevel=_DEBUG)
+        log.msg("Notifier: register: URL:%(r)s, Dest:%(d)s, Expiry:%(e)s", r=url, d=dest, e=expiry, logLevel=_INFO)
         if url not in self._subscriptions:
             log.msg("Notifier: register: No subsciption for URL %(r)s", r=url, logLevel=_TRACE)
             try:
@@ -46,7 +46,7 @@ class Notifier:
  
 
     def unregister(self, url, dest):
-        log.msg("Notifier: unregister: URL:%(r)s, Dest:%(d)s", r=url, d=dest, logLevel=_DEBUG)
+        log.msg("Notifier: unregister: URL:%(r)s, Dest:%(d)s", r=url, d=dest, logLevel=_INFO)
         if url in self._subscriptions:
             log.msg("Notifier: unregister: Subsciption found for URL: %(r)s", r=url, logLevel=_TRACE)
             sub = self._subscriptions[url]

@@ -12,6 +12,7 @@ from twisted.internet import task, threads
 
 _TRACE = log.TRACE
 _DEBUG = log.DEBUG
+_INFO = log.INFO
 _WARN = log.WARN
 
 
@@ -56,6 +57,7 @@ class GeneralFileConfig:
             self._configLock = False
             return
 
+        log.msg("GeneralFileConfig: _configure: Configuration file has been modified.  Update notifier configuration.", logLevel=_INFO)
         d = threads.deferToThread(self._configure_thread, self._path, self._notifiers.keys())
         d.addCallback(self._configure_thread_callback)
         d.addErrback(self._configure_thread_errback)
