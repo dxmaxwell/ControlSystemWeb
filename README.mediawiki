@@ -11,6 +11,97 @@
 * Send messages to notify of process variable changes.
 
 
+===Device URIs===
+
+All devices are referenced using a [http://en.wikipedia.org/wiki/Uniform_resource_identifier URI]
+
+
+====EPICS URIs====
+
+EPICS devices use the scheme, '''epics''', and have the general form: '''epics:ProcessVariable?option1=value1&option2=value2'''
+
+The '''ProcessVariable''' component is required but correct URL encoding is not enforced (ie '''PCT2026X-01%3AmA%3Afbk''' and '''PCT2026X-01:mA:fbk''' both work).
+
+The supported '''options''' are:
+* '''buffer''' - Use a buffer of the specified length. Only useful for charting type fields. (Integer)
+* '''rate''' - Specified ''period'' in seconds to force a device value update. (Real)
+* '''ratelimit''' - Specified ''period'' in seconds to limit device value updates. (Real)
+* '''lowedge''' - Device value updated when its value goes below the specified value. (Real)
+* '''highedge''' - Device value updated when its value goes above the specified value. (Real)
+* '''threshold''' - Device value updated when its value goes above or below the specified value. (Real)
+* '''name'''  - Specify the name of the device. Displayed on Y-axis of chart. (String)
+* '''units''' - Specify the units of the device. (String)
+* '''precision''' - Specify the precision (number of decimal places) of a device value to show. (Integer)
+* '''scale''' - Multiply the device value by the constant value specified. (Real)
+* '''offset''' - Add to the device value the constant value specified. (Real)
+
+For example: '''epics:PCT2026X-01:mA:fbk?threshold=50&name=Beam+Current'''
+
+
+===Web Interface===
+
+====Serving Files====
+
+Control System Web can be configured to serve files from any location:
+
+<pre>
+from twisted.web.static import File
+from twisted.web.resource import Resource
+
+fileResource = File('/home/directory/csweb')
+webroot.putChild('myfiles', fileResource)
+</pre>
+
+With the above configuration the contents of '''/home/directory/csweb''' is served at '''<nowiki>http://hostname/myfiles</nowiki>'''.
+
+
+====Web Pages====
+
+To enable integration with Control System web, include these JS libraries and CSS style sheets in an HTML document:
+
+ <link type="text/css" rel="stylesheet" href="/static/css/cswui.css" />
+ 
+ <script type="text/javascript" src="/static/lib/jquery/1.8/jquery.min.js"></script>
+ <script type="text/javascript" src="/static/lib/dygraph/dygraph.min.js"></script>
+ <script type="text/javascript" src="/static/js/csweb.js"></script>
+ <script type="text/javascript" src="/static/js/cswui.js"></script>
+
+
+Then, within the body of an HTML document, CSW fields are specified with the following markup:
+
+<pre>
+<div class="[CSW_FIELD]">
+    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
+    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
+    ...
+</div>
+</pre>
+
+=====Fields=====
+
+Supported values for '''CSW_FIELD''' are the following:
+
+* '''csw-readonly-field''' - A readonly text field that display the value of the specified device.
+* '''csw-strip-chart''' - A strip chart that displays the value of the specified device over time.
+
+=====Options=====
+
+Supported values for '''CSW_FIELD_OPTION''' are the following:
+* '''device''' - Specify the path component of the device URI. Generally this is the PV name.
+* '''protocol''' - Specify the scheme of the device URI. This is optional and defaults to '''epics'''.
+* All other options and their values are added to the query component of the device URI.
+
+
+====Examples====
+
+<pre>
+<div class="csw-strip-chart">
+    <div name="device">TM2026X-101</div>
+    <div name="buffer">20</div>
+</div>
+</pre>
+
+
 ===Notifications===
 
 ====Email====
@@ -65,56 +156,33 @@ twitterNotifier.register("epics:SR2026X:Status", "AgentName")
 </pre>
 
 
-===Web Interface===
+====Configuration====
 
-Include the CSW JavaScript libraries (and dependencies) in the HTML document:
+To simplify the configuration of the various notifiers, a configuration manager is used.  This configuration manager uses a single configuration file to setup recipients for all notifiers and periodically checks for changes to the configuration file and updates the notifiers without needing to restart the server.
 
- <script type="text/javascript" src="/static/lib/jquery/1.8/jquery.min.js"></script>
- <script type="text/javascript" src="/static/lib/dygraph/dygraph.min.js"></script>
- <script type="text/javascript" src="/static/js/csweb.js"></script>
- <script type="text/javascript" src="/static/js/cswui.js"></script>
-
-
-Then, CSW fields are specified with the following markup:
+Configure the notifier configuration manager by specifying a configuration file path and a notifier mapping:
 
 <pre>
-<div class="[CSW_FIELD]">
-    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
-    <div name="[CSW_FIELD_OPTION]">[VALUE]</div>
-    ...
-</div>
+import os.path
+
+from csweb.notify.config import GeneralFileConfig
+
+notifierConfig = GeneralFileConfig(os.path.join(csweb_home, "config", "notifiers.cfg"), { "mail":mailNotifier, "sms":smsNotifier, "twitter":twitterNotifier })
 </pre>
 
-====Fields====
+The configuration file uses the [http://docs.python.org/2/library/configparser.html ConfigParser] format as specified by the Python standard library.  Each section is named with a device URL and the configuration options in each section must match the names provided for each notifier in the above configuration.
 
-Supported values for '''CSW_FIELD''' are the following:
-
-* '''csw-readonly-field''' - A readonly text field that display the value of the specified device.
-* '''csw-strip-chart''' - A strip chart that displays the value of the specified device over time.
-
-====Options====
-
-Supported values for '''CSW_FIELD_OPTION''' are the following:
-
-* '''device''' - Specify the identifier use to access the device. Generally this is the PV name.
-* '''protocol''' - Specified the protocol (aka scheme) to use with this device. Defaults to "epics".
-* '''buffer''' - Use a buffer of the specified length. Only useful for charting type fields.
-* '''rate''' - Specified ''period'' in seconds to force a device value update.
-* '''ratelimit''' - Specified ''period'' in seconds to limit device value updates.
-* '''lowedge''' - Device value updated when its value goes below the specified value.
-* '''highedge''' - Device value updated when its value goes above the specified value.
-* '''threshold''' - Device value updated when its value goes above or below the specified value.
-* '''name'''  - Specify the name of the device. Displayed on Y-axis of chart.
-* '''units''' - Specify the units of the device.
-* '''precision''' - Specify the precision (number of decimal places) of a device value to show.
-* '''scale''' - Multiply the device value by the constant value specified.
-* '''offset''' - Add to the device value the constant value specified.
-
-====Examples====
+An example notifier configuration file:
 
 <pre>
-<div class="csw-strip-chart">
-    <div name="device">TM2026X-101</div>
-    <div name="buffer">20</div>
-</div>
+
+[DEFAULT]
+USER1_EMAIL:user1@host.com
+
+[ epics:PCT2026X-01:mA:fbk?threshold=50&name=Beam+Current ]
+mail: %(USER1_EMAIL)s, user2@host.com (2013-03-15)
+sms: 13065551234, 13065554321
+
 </pre>
+
+In addition to specifying a recipient, an optional expiry time can be provided within parenthesis.  Notifications will not be sent to the recipient if the current time is after the expiry time.  Permitted formats for the expiry time are '''YYYY-MM-DD''',  '''YYYY-MM-DD HH:MM''', '''YYYY/MM/DD''', '''YYYY/MM/DD HH:MM''' (see ''csweb.util.dateutil'' module for more details)
