@@ -27,7 +27,7 @@ except Exception as e:
 
 
 # Start the reactor #
-log.msg('start.py: Run the reactor', logLevel=_INFO)
+log.msg('cswebd.py: Run the reactor', logLevel=_INFO)
 reactor.run()
 # Wait for reactort #
-log.msg('start.py: Reactor stopped.', logLevel=_INFO)
+log.msg('cswebd.py: Reactor stopped.', logLevel=_INFO)
